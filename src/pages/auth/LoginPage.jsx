@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Stethoscope, Shield, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ThemeToggle from '../../components/ThemeToggle';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -42,8 +43,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-medcare-purple/5 dark:from-dark-bg dark:via-dark-bg dark:to-medcare-purple/10 p-4">
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 md:mb-8">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-medcare-purple to-medcare-indigo flex items-center justify-center mb-4 shadow-lg shadow-medcare-purple/25">
             <Stethoscope className="text-white" size={32} />
           </div>
@@ -51,7 +55,7 @@ export default function LoginPage() {
           <p className="text-gray-500 dark:text-dark-text mt-1">Plateforme Médicale Intelligente</p>
         </div>
 
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl border border-gray-100 dark:border-dark-border p-8">
+        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl border border-gray-100 dark:border-dark-border p-5 sm:p-8">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">Connexion</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

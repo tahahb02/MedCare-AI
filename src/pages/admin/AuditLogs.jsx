@@ -11,8 +11,8 @@ export default function AuditLogs() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Shield size={24} className="text-medcare-purple" /> Journal d'Audit</h1>
-      <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border overflow-hidden">
-        <table className="w-full">
+      <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border overflow-x-auto">
+        <table className="w-full min-w-[600px]">
           <thead><tr className="border-b border-gray-100">
             <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase">Utilisateur</th>
             <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase">Action</th>

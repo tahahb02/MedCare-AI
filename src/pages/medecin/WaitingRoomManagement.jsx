@@ -66,12 +66,12 @@ export default function WaitingRoomManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Users size={24} className="text-medcare-purple" /> Salle d'attente</h1>
           <p className="text-gray-500 dark:text-dark-text text-sm">Gérez votre file de patients</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           {Object.entries(doctorStatusConfig).map(([key, cfg]) => (
             <button key={key} onClick={() => { setDoctorStatus(key); toggleDoctorStatus.mutate(key); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${doctorStatus === key ? `${cfg.color} ring-2 ring-offset-1 ring-current` : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}>
               <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${cfg.dot}`}></span>{cfg.label}
@@ -111,14 +111,14 @@ export default function WaitingRoomManagement() {
             const cfg = statusConfig[patient.status] || statusConfig.waiting;
             return (
               <motion.div key={patient._id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border p-5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-medcare-purple/10 flex items-center justify-center text-medcare-purple font-bold text-sm">
                       {i + 1}
                     </div>
                     <div>
                       <p className="font-semibold text-gray-900 dark:text-white">{patient.patientId?.name || patient.name || 'Patient'}</p>
-                      <div className="flex items-center gap-3 mt-1">
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1 ${cfg.color}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}></span>
                           {cfg.label}
@@ -131,7 +131,7 @@ export default function WaitingRoomManagement() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {patient.status === 'waiting' && (
                       <button onClick={() => notifyMutation.mutate(patient.patientId?._id || patient._id)} disabled={notifyMutation.isPending} className="px-4 py-2 rounded-xl bg-medcare-blue text-white text-sm font-medium flex items-center gap-1.5 hover:bg-medcare-blue/90 disabled:opacity-50 transition-colors">
                         <Bell size={14} /> Notifier

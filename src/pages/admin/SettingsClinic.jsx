@@ -116,7 +116,7 @@ export default function SettingsClinic() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Adresse</label>
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-sm" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Téléphone</label>
                   <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-sm" />
@@ -137,18 +137,20 @@ export default function SettingsClinic() {
             <div className="space-y-3">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Horaires d'ouverture</h3>
               {hours.map((h, i) => (
-                <div key={h.day} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-dark-bg rounded-xl">
-                  <span className="w-24 text-sm font-medium text-gray-900 dark:text-white">{h.day}</span>
-                  <input type="checkbox" checked={!h.closed} onChange={e => updateHour(i, 'closed', !e.target.checked)} className="rounded border-gray-300 text-medcare-purple" />
-                  {!h.closed ? (
-                    <div className="flex items-center gap-2">
-                      <input type="time" value={h.open} onChange={e => updateHour(i, 'open', e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm" />
-                      <span className="text-gray-400">-</span>
-                      <input type="time" value={h.close} onChange={e => updateHour(i, 'close', e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm" />
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">Fermé</span>
-                  )}
+                <div key={h.day} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 bg-gray-50 dark:bg-dark-bg rounded-xl">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white sm:w-24">{h.day}</span>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!h.closed} onChange={e => updateHour(i, 'closed', !e.target.checked)} className="rounded border-gray-300 text-medcare-purple" />
+                    {!h.closed ? (
+                      <div className="flex items-center gap-2">
+                        <input type="time" value={h.open} onChange={e => updateHour(i, 'open', e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm" />
+                        <span className="text-gray-400">-</span>
+                        <input type="time" value={h.close} onChange={e => updateHour(i, 'close', e.target.value)} className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-sm" />
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">Fermé</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -39,8 +39,8 @@ export default function SubscriptionManagement() {
       </div>
 
       {isLoading ? <div className="flex items-center justify-center h-32"><div className="w-8 h-8 border-4 border-medcare-purple border-t-transparent rounded-full animate-spin"></div></div> : (
-        <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border overflow-x-auto">
+          <table className="w-full min-w-[700px]">
             <thead><tr className="border-b border-gray-100 dark:border-dark-border">
               <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase">Patient</th>
               <th className="text-left px-6 py-4 text-xs font-medium text-gray-500 uppercase">Plan</th>
