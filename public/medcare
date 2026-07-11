@@ -1,0 +1,2354 @@
+================================================================================
+   MEDCARE AI — Plateforme Médicale Intelligente
+   (Médecins + Patients + Secrétaire/Admin)
+   Prompt Technique Complet pour Développement — VERSION COMPLÈTE AMÉLIORÉE
+================================================================================
+
+CONTEXTE :
+Créer une application web/mobile full-stack nommée "MedCare AI" — une plateforme
+médicale complète servant TROIS rôles : Médecins, Secrétaire/Admin, et Patients.
+
+RÔLES :
+1. SECRÉTAIRE/ADMIN :
+   - C'est ELLE qui crée les comptes patients (les patients ne s'inscrivent pas)
+   - Elle collecte les informations du patient (nom, email, téléphone, etc.)
+   - Elle crée le compte avec email + mot de passe
+   - Elle remet les identifiants au patient (email + mot de passe)
+   - Elle gère les abonnements patients (mensuel/trimestriel/semestre/annuel)
+   - Elle voit le tableau de bord : patients actifs, abonnements, prochains paiements
+   - Elle reçoit des notifications multi-niveaux (J-30, J-15, J-3, J+0, J+7)
+   - Elle peut envoyer des notifications aux patients (rappel paiement, messages)
+   - Gestion CRM : newsletters, automatisations, analytics business intelligence
+   - Gestion multi-cliniques avec consolidation des données
+
+2. MÉDECIN :
+   - Gère ses patients avec dossiers complets
+   - Consulte les documents/analyses uploadés
+   - Fournit son analyse médicale
+   - Planifie les RDV selon le degré d'urgence
+   - Accède aux PDF dossiers patients
+   - Visualise les GRAPHIQUES de chaque patient
+   - Envoie des notifications aux patients (se présenter au cabinet)
+   - Communique avec ses patients (messages + appels vidéo)
+   - Outils d'aide à la décision clinique (scores de risque, interactions médicamenteuses)
+   - Vue cohorte patients avec alertes groupées
+   - Prescription assistée avec base de médicaments
+
+3. PATIENT :
+   - Son compte est crée par la secrétaire (pas d'inscription)
+   - Se connecte avec les identifiants reçus
+   - Interface personnalisée selon son profil
+   - Gère son dossier médical, upload documents et analyses
+   - Reçoit analyse IA + analyse médecin
+   - Prend rendez-vous
+   - Reçoit notifications du médecin ET de la secrétaire
+   - Communique avec son médecin
+   - Dashboard interactif : score santé personnalisé, gamification
+   - Salle d'attente virtuelle
+   - Journal de santé multi-format
+   - Coaching santé automatisé
+
+C'est une GRANDE application qui remplace le papier médical par le numérique
+et centralise la gestion administrative via la secrétaire.
+
+================================================================================
+STACK TECHNIQUE (identique au projet SmartLife AI)
+================================================================================
+
+FRONTEND :
+- React 19 + Vite 8 + Tailwind CSS v4 (plugin @tailwindcss/vite, dark mode via @custom-variant dark)
+- React Router DOM v7 (routes SPA avec AnimatePresence)
+- TanStack React Query v5 (state serveur, cache, mutations)
+- Axios v1 (interceptors JWT refresh automatique)
+- Framer Motion v12 (animations page, stagger, hover, modals)
+- Lucide React (icônes vectorielles premium)
+- React Hot Toast (notifications toast)
+- React Easy Crop (upload photos/documents avec crop)
+- Recharts v3 (GRAPHIQUES : trajectoire patient, consultations, métriques santé, abonnements)
+- React Hook Form + Zod (validation formulaires)
+- Socket.IO Client v4 (messagerie temps réel + notifications)
+- @react-pdf/renderer ou html2pdf.js (génération PDF dossiers patients)
+- WebRTC / SimplePeer (appels vidéo entre médecin et patient)
+- date-fns ou dayjs (manipulation dates)
+
+BACKEND :
+- Express v4 + Node.js (ES modules, type: module)
+- Mongoose v8 (MongoDB ODM)
+- JWT (jsonwebtoken v9) — access token (15min) + refresh token (30 jours)
+- Bcryptjs v2 (hashage mots de passe, 12 rounds)
+- Express Validator (validation requêtes)
+- Multer (upload fichiers/analyses/documents, memoryStorage)
+- Helmet + CORS + Express Rate Limit (sécurité)
+- Socket.IO v4 (messagerie temps réel + notifications)
+- PDFKit ou Puppeteer (génération PDF côté serveur)
+- node-cron (tâches automatiques : vérification abonnements expirés)
+- ioredis (cache sessions, données fréquentes, compteurs notifications)
+- express-mongo-sanitize + hpp (protection injection)
+- express-validator (validation stricte des inputs)
+
+BASE DE DONNÉES :
+- MongoDB Atlas (cluster gratuit M0, migration vers M10 en production)
+- Mongoose schemas avec validation, indexes composés, TTL
+- Redis (mise en cache sessions, données fréquentes, compteurs)
+- Index géospatiaux pour recherche médecins proches
+- Cursor-based pagination pour listes > 10 000 éléments
+
+DEPLOYMENT :
+- Vercel (frontend statique + backend serverless via api/index.js)
+- Brevo API (email OTP + notifications + alertes abonnements)
+- API Key AI (OpenAI / Gemini / Mistral au choix)
+- Cloudinary (stockage fichiers médicaux)
+
+AUTHENTIFICATION (triple role) :
+- Secrétaire crée le compte patient avec rôle "patient"
+- Le médecin s'inscrit avec vérification licence (ou crée par admin)
+- Login JWT avec refresh automatique
+- Middleware: protect, verifiedOnly, authorize('patient'), authorize('medecin'), authorize('admin'), authorize('medecin','admin')
+- Double authentification obligatoire pour admin, optionnelle pour autres
+- Session timeout 30 minutes d'inactivité
+- Rate limiting par IP et par utilisateur
+
+EMAIL (Brevo API) :
+- OTP inscription/vérification médecin
+- Confirmation RDV (patient + médecin)
+- Rappel RDV (24h avant)
+- Rappel abonnement multi-niveaux (J-30, J-15, J-3, J+0, J+7)
+- Notification nouveau compte créé (email bienvenue au patient avec identifiants)
+- Nouveau document reçu (notification médecin)
+- Analyse prête (notification patient)
+- Newsletters et communications marketing (avec consentement)
+- 300 emails/jour gratuits
+
+================================================================================
+STRUCTURE DU PROJET
+================================================================================
+
+medcare-ai/
+├── api/index.js                     # Vercel serverless (copie backend routes)
+├── backend/
+│   ├── server.js                    # Express + Socket.IO + cron jobs
+│   ├── models/                      # Modèles Mongoose
+│   ├── controllers/                 # Logique métier
+│   ├── routes/                      # Routes API REST
+│   ├── middlewares/auth.js          # protect, verifiedOnly, authorize(role)
+│   ├── services/
+│   │   ├── aiService.js            # Multi-provider AI (OpenAI/Gemini/Mistral)
+│   │   ├── systemPrompt.js         # Prompt système médical + fallback keywords
+│   │   ├── pdfService.js           # Génération PDF dossiers patients
+│   │   ├── subscriptionCron.js     # Vérification automatique abonnements
+│   │   ├── notificationService.js  # Service notifications unifié multi-catégories
+│   │   ├── cacheService.js         # Service Redis cache
+│   │   └── auditService.js         # Service audit log
+│   ├── validators/                  # express-validator schemas
+│   └── utils/
+│       ├── generateToken.js        # JWT generation
+│       ├── sendEmail.js            # Brevo API (fetch, pas SMTP)
+│       └── fileUpload.js           # Multer config memoryStorage
+├── src/
+│   ├── main.jsx                     # BrowserRouter + QueryClient + ThemeProvider
+│   ├── App.jsx                      # Routes (triple routing patient/médecin/admin)
+│   ├── api/axios.js                 # Axios instance + interceptors + authAPI
+│   ├── context/
+│   │   ├── AuthContext.jsx          # user (avec role), login, logout
+│   │   ├── ThemeContext.jsx         # dark/light mode (localStorage)
+│   │   ├── SidebarContext.jsx       # collapsed state
+│   │   └── SocketContext.jsx        # Socket.IO connection (messagerie + notifications)
+│   ├── components/
+│   │   ├── Sidebar.jsx              # Navigation adaptative selon rôle
+│   │   ├── SidebarMedecin.jsx       # Sidebar spécifique médecin
+│   │   ├── SidebarPatient.jsx       # Sidebar spécifique patient
+│   │   ├── SidebarAdmin.jsx         # Sidebar spécifique secrétaire/admin
+│   │   ├── ProtectedRoute.jsx       # Guard auth + role check
+│   │   ├── PasswordInput.jsx        # Input show/hide password
+│   │   ├── ImageCropModal.jsx       # Crop photos
+│   │   ├── PdfViewer.jsx            # Visualiseur PDF intégré
+│   │   ├── PdfGenerator.jsx         # Générateur PDF dossier patient
+│   │   ├── ChatBox.jsx              # Composant messagerie (conversations)
+│   │   ├── VideoCall.jsx            # Appel vidéo WebRTC (screen share, whiteboard, chat parallèle)
+│   │   ├── WaitingRoom.jsx          # Salle d'attente virtuelle
+│   │   ├── HealthChart.jsx          # Graphiques Recharts (trajectoire santé)
+│   │   ├── UrgencyBadge.jsx         # Badge couleur degré urgence
+│   │   ├── DocumentCard.jsx         # Carte document uploadé
+│   │   ├── SubscriptionCard.jsx     # Carte abonnement patient (admin)
+│   │   ├── NotificationBell.jsx     # Cloche notifications temps réel
+│   │   ├── PatientCreationForm.jsx  # Formulaire création compte patient (admin)
+│   │   ├── HealthScoreCard.jsx      # Carte score santé personnalisé
+│   │   ├── GamificationBadge.jsx    # Badges gamification patient
+│   │   ├── HealthCalendar.jsx       # Calendrier santé intelligent
+│   │   ├── QuickHealthLog.jsx       # Saisie rapide symptômes
+│   │   ├── DoctorStatusIndicator.jsx # Indicateur statut médecin en temps réel
+│   │   ├── ClinicalDecisionCard.jsx # Carte aide à la décision clinique
+│   │   ├── AppointmentCalendar.jsx  # Calendrier interactif RDV
+│   │   ├── AuditLogTable.jsx        # Tableau logs d'audit
+│   │   ├── ConsentModal.jsx         # Modal consentement RGPD
+│   │   ├── OnboardingTour.jsx       # Tour guidé d'onboarding
+│   │   └── ExportButton.jsx         # Export PDF/Excel données
+│   ├── layouts/
+│   │   ├── MainLayoutPatient.jsx    # Layout côté patient
+│   │   ├── MainLayoutMedecin.jsx    # Layout côté médecin
+│   │   └── MainLayoutAdmin.jsx      # Layout côté secrétaire/admin
+│   ├── pages/
+│   │   ├── auth/                    # Login, OTP, Reset, Onboarding
+│   │   ├── admin/                   # Pages secrétaire/admin
+│   │   │   ├── AdminDashboard.jsx   # Tableau de bord admin enrichi (analytics, BI)
+│   │   │   ├── CreatePatient.jsx    # Créer un nouveau patient
+│   │   │   ├── PatientList.jsx      # Liste patients + abonnements
+│   │   │   ├── SubscriptionManagement.jsx # Gestion abonnements (calendrier échéances)
+│   │   │   ├── NotificationsAdmin.jsx # Notifications admin
+│   │   │   ├── AnalyticsDashboard.jsx # Analytics & Business Intelligence
+│   │   │   ├── NewsletterManager.jsx  # Création & envoi newsletters
+│   │   │   ├── AuditLogs.jsx        # Logs d'audit complets
+│   │   │   └── SettingsClinic.jsx   # Paramètres clinique (multi-cliniques)
+│   │   ├── medecin/                 # Pages côté médecin
+│   │   │   ├── DoctorDashboard.jsx  # Dashboard enrichi (cohorte, alertes groupées)
+│   │   │   ├── ClinicalDecision.jsx # Outils aide décision clinique
+│   │   │   ├── DrugInteractions.jsx # Vérification interactions médicamenteuses
+│   │   │   └── WaitingRoomManagement.jsx # Gestion salle d'attente
+│   │   ├── patient/                 # Pages côté patient
+│   │   │   ├── PatientDashboard.jsx # Dashboard interactif (score santé, gamification)
+│   │   │   ├── HealthJournal.jsx    # Journal santé multi-format
+│   │   │   ├── HealthCalendarPage.jsx # Calendrier santé intelligent
+│   │   │   ├── HealthCoaching.jsx   # Coaching santé automatisé
+│   │   │   └── WaitingRoomView.jsx  # Vue salle d'attente virtuelle
+│   │   └── shared/                  # Pages communes
+│   └── utils/
+│       ├── helpers.js               # formatCurrency, formatDate, urgencyColor
+│       ├── cropImage.js             # Canvas crop utility
+│       ├── pdfGenerator.js          # Client-side PDF generation
+│       └── healthScoring.js         # Calcul score santé trajectoire
+├── vercel.json
+├── package.json
+└── vite.config.js
+
+================================================================================
+MODÈLES DE BASE DE DONNÉES — VERSION COMPLÈTE AVEC SÉPARATION DES PROFILS
+================================================================================
+
+--- COMPTE UTILISATEUR (modèle de base commun) ---
+
+USER (compte patient, médecin, ou admin/secrétaire) :
+  name, email, phone, password (bcrypt),
+  role (patient/medecin/admin),
+  avatar (base64 ou URL cloudinary),
+  isVerified, verifyMethod (email/whatsapp),
+  isActive, createdAt, deletedAt,
+  refreshToken, lastLogin,
+
+  // Préférences utilisateur (commun à tous les rôles) :
+  preferences {
+    language (fr/ar/en),
+    timezone,
+    currency,
+    theme (light/dark/system),
+    notifications {
+      medical { email, push, inApp },      // résultats, prescriptions, rappels
+      administrative { email, push, inApp }, // abonnements, paiements, RDV
+      system { email, push, inApp },        // mises à jour, sécurité
+      promotional { email, push, inApp }    // offres, newsletters
+    },
+    quietHours { start (HH:mm), end (HH:mm) },  // horaires non-dérangement
+    digestFrequency (daily/weekly/none)     // fréquence emails résumé
+  },
+
+  // Sécurité :
+  twoFactorEnabled (boolean),
+  twoFactorSecret (string),
+  failedLoginAttempts (number),
+  lockUntil (Date),
+  passwordChangedAt (Date),
+  passwordResetToken (String),
+  passwordResetExpires (Date)
+
+--- PROFIL PATIENT (spécifique patient, séparé du User) ---
+
+PATIENT_PROFILE :
+  userId (→User, unique, one-to-one),
+
+  // Identité médicale :
+  medicalRecordNumber (unique, auto MED-XXXX-XXXX),
+  dateOfBirth, gender (homme/femme/autre),
+  bloodType (A+/A-/B+/B-/AB+/AB-/O+/O-),
+  address, city, zipCode,
+
+  // Contact d'urgence :
+  emergencyContact { name, phone, relationship },
+
+  // Assurance :
+  insuranceProvider, insuranceNumber,
+  insuranceExpiryDate,
+
+  // Médecin traitant & création :
+  primaryDoctorId (→User, médecin assigné par la secrétaire),
+  createdBy (→User, ID de la secrétaire qui a créé le compte),
+
+  // Données cliniques :
+  allergies [{ name, severity (légère/modérée/grave), reaction, identifiedDate }],
+  chronicConditions [{ name, diagnosedDate, status (actif/en_rémission/contrôlé), treatment }],
+  familyHistory [{ condition, relation, ageAtDiagnosis }],
+  surgicalHistory [{ procedure, date, hospital, surgeon, notes, complications }],
+
+  // Mesures physiques :
+  height (cm), weight (kg), BMI (calculé automatiquement),
+  smokingStatus (non/fumer/ancien), smokingYears,
+  alcoholConsumption (aucun/occasionnel/régulier/important),
+  physicalActivityLevel (sédentaire/léger/modéré/intense),
+  activityFrequency (jours/semaine),
+
+  // Données cliniques suivies :
+  bloodPressureHistory [{ systolic, diastolic, date, measuredBy }],
+  weightHistory [{ weight, date, notes }],
+  bloodSugarHistory [{ value, date, fasting (boolean), measuredBy }],
+  cholesterolHistory [{ total, hdl, ldl, triglycerides, date }],
+  heartRateHistory [{ value, date, context }],
+
+  // Dernière visite :
+  lastCheckup { date, doctorId, notes, nextCheckupDate },
+
+  // Notes :
+  medicalNotes (notes privées du patient),
+  doctorNotes (notes du médecin, accessible par le médecin),
+
+  // Consentements RGPD :
+  consents {
+    dataProcessing (boolean, consentement traitement données médicales),
+    dataProcessingDate (Date),
+    marketingConsent (boolean, consentement communications marketing),
+    marketingConsentDate (Date),
+    dataRetentionConsent (boolean),
+    dataRetentionConsentDate (Date),
+    thirdPartySharing (boolean, partage avec tiers assureurs/labos),
+    thirdPartySharingDate (Date)
+  },
+
+  // Portabilité données :
+  dataExportRequested (boolean),
+  dataExportDate (Date),
+  accountDeletionRequested (boolean),
+  accountDeletionDate (Date),  // délai 30 jours avant suppression effective
+
+  createdAt, updatedAt
+
+--- PROFIL MÉDECIN (spécifique médecin, séparé du User) ---
+
+DOCTEUR_PROFILE :
+  userId (→User, unique, one-to-one),
+
+  // Spécialisations :
+  specializations [{ name, yearsExperience, isPrimary (boolean) }],
+  licenseNumber (unique),
+  hospital, clinicAddress, clinicCoordinates {
+    type (Point), coordinates [longitude, latitude]  // index géospatial
+  },
+
+  // Tarification :
+  consultationFee, currency,
+  consultationTypes [{ name, duration (minutes), price, description }],
+  acceptsInsurance (boolean),
+  acceptedInsuranceProviders [],
+
+  // Disponibilités :
+  availableSlots [{ day (0-6), startTime, endTime, isActive, maxPatients }],
+  workingHours { monday-friday { start, end }, saturday { start, end }, sunday { start, end } },
+  breakHours [{ start, end, reason }],
+  leaveDays [{ startDate, reason, status }],
+  slotDuration (15/30/45/60),  // durée par défaut créneau
+
+  // Statistiques :
+  rating (1-5), ratingsCount,
+  totalConsultations, totalPatients,
+  averageConsultationDuration,
+  noShowRate (percentage),
+  verified, verificationDate,
+  verificationDocuments [{ type, url, uploadedAt }],
+
+  // Profil public :
+  languages [], bio, photo,
+  education [{ degree, institution, year }],
+  certifications [{ name, issuingBody, year, expiryDate }],
+
+  // Statut en temps réel :
+  currentStatus (disponible/en_consultation/en_réunion/absent/indisponible),
+  statusUpdatedAt (Date),
+  estimatedAvailableAt (Date),  // quand il sera disponible
+  statusMessage (string),  // ex: "En pause jusqu'à 14h30"
+
+  createdAt, updatedAt
+
+--- PROFIL ADMIN/SECRÉTAIRE (spécifique admin, séparé du User) ---
+
+ADMIN_PROFILE :
+  userId (→User, unique, one-to-one),
+
+  employeeId (unique, auto EMP-XXXX),
+  position (super_admin/admin/secretaire),
+  department,
+
+  // Médecins gérés :
+  managedDoctors [{ doctorId (→User), assignedDate }],
+
+  // Permissions granulaires :
+  permissions {
+    patientManagement (boolean),
+    subscriptionManagement (boolean),
+    doctorManagement (boolean),
+    billingAccess (boolean),
+    analyticsAccess (boolean),
+    notificationSend (boolean),
+    systemSettings (boolean),
+    auditLogAccess (boolean),
+    newsletterManagement (boolean)
+  },
+
+  // Cliniques gérées :
+  managedClinics [{ clinicId, role (owner/admin/editor) }],
+
+  createdAt, updatedAt
+
+--- CLINIQUE (multi-cliniques) ---
+
+CLINIC :
+  name, address, phone, email,
+  logo, coverImage,
+  coordinates { type (Point), coordinates [longitude, latitude] },
+  openingHours { monday-sunday { open, close, isClosed } },
+  settings { defaultCurrency, defaultLanguage, timezone },
+  isActive, createdAt
+
+--- ABONNEMENT PATIENT (version enrichie) ---
+
+SUBSCRIPTION :
+  patientId (→User, unique — 1 patient = 1 abonnement actif),
+  planType (mensuel/trimestriel/semestre/annuel),
+  status (actif/en_attente/expiré/suspendu/annulé/en_periodé_de_grâce),
+  startDate (Date, date de début de l'abonnement),
+  endDate (Date, date de fin calculée selon planType),
+  nextPaymentDate (Date, date du prochain paiement),
+
+  // Montant et paiement :
+  amount (Number, montant payé),
+  originalAmount (Number, montant avant réduction),
+  discountApplied (Number, montant de la réduction),
+  promoCode (String, code promotionnel utilisé),
+  currency (String, devise),
+  paymentMethod (especes/virement/cartebancaire/mobile/online),
+  paymentProof (String, référence ou preuve de paiement),
+  paymentReceiptUrl (String, url du reçu),
+
+  // Gestion renouvellement :
+  autoRenewal (boolean, false par défaut),
+  autoRenewalPaymentMethod (String),
+
+  // Période d'essai :
+  isTrialPeriod (boolean, false par défaut),
+  trialEndDate (Date, null si pas d'essai),
+  trialConverted (boolean),
+
+  // Période de grâce :
+  gracePeriodDays (Number, configurable par plan: 7/15/30),
+  gracePeriodEnd (Date, endDate + gracePeriodDays),
+
+  // Alertes multi-niveaux :
+  alerts {
+    j30Sent (boolean, false),  // J-30: notification "expire bientôt"
+    j15Sent (boolean, false),  // J-15: rappel plus insistant
+    j3Sent (boolean, false),   // J-3: notification critique
+    j0Sent (boolean, false),   // J+0: accès restreint
+    j7Sent (boolean, false)    // J+7: accès suspendu
+  },
+
+  // Paiements fractionnés :
+  installmentPlan {
+    enabled (boolean, false),
+    totalInstallments (Number),
+    completedInstallments (Number),
+    installmentAmount (Number),
+    installmentFrequency (weekly/biweekly/monthly),
+    nextInstallmentDate (Date)
+  },
+
+  // Métadonnées :
+  createdBy (→User, secrétaire qui a enregistré l'abonnement),
+  renewalReminderSent (Boolean, false par défaut),
+  lastReminderDate (Date),
+  history [{ date, action (creation/paiement/renouvellement/suspension/annulation/expiration/grace_start/essai_start/conversion_essai), amount, notes, performedBy }],
+
+  createdAt, updatedAt
+
+  // Calcul automatique de endDate selon planType :
+  // mensuel = startDate + 30 jours
+  // trimestriel = startDate + 90 jours
+  // semestre = startDate + 180 jours
+  // annuel = startDate + 365 jours
+
+--- CODE PROMOTIONNEL ---
+
+PROMO_CODE :
+  code (unique, ex: MEDCARE-2024),
+  discountType (percentage/fixed),
+  discountValue (Number),
+  maxUses (Number, illimité si null),
+  usedCount (Number, 0),
+  applicablePlans [planType],
+  startDate, endDate,
+  isActive (boolean),
+  createdBy (→User),
+  createdAt
+
+--- HISTORIQUE PAIEMENTS (détaillé) ---
+
+PAYMENT :
+  subscriptionId (→Subscription),
+  patientId (→User),
+  amount, currency,
+  paymentMethod (especes/virement/cartebancaire/mobile/online),
+  status (pending/completed/failed/refunded),
+  receiptNumber (unique),
+  receiptUrl (String, preuve de paiement),
+  refundAmount (Number, si remboursement),
+  refundReason (String),
+  refundDate (Date),
+  processedBy (→User, secrétaire),
+  transactionId (String, ID transaction externe),
+  notes,
+  createdAt
+
+--- DOSSIER MÉDICAL PATIENT (enrichi) ---
+
+PATIENT_PROFILE :  // (voir ci-dessus dans la séparation des profils)
+
+--- PROFIL MÉDECIN (enrichi) ---
+
+DOCTUR_PROFILE :  // (voir ci-dessus dans la séparation des profils)
+
+--- RENDEZ-VOUS MÉDICAL (enrichi) ---
+
+APPOINTMENT :
+  patientId (→User), doctorId (→User),
+  date, endDate, duration (minutes),
+  type (consultation/urgence/suivi/téléconsultation/bilan/control),
+  urgencyDegree (routine/normal/urgent/très_urgent/critique),
+  status (en_attente/confirmé/en_cours/terminé/annulé/absent/reporté/en_salle_attente),
+  reason, symptoms[], patientNotes, doctorNotes,
+  location (cabinet/hôpital/domicile/en_ligne),
+  followUp (boolean), followUpAppointmentId (→Appointment),
+  documentsUploaded[] (liens vers documents du patient),
+  consultationFee, paid, paymentMethod,
+  cancelReason, cancelBy (patient/medecin),
+  aiUrgencyScore (0-100, calculé par IA),
+  reminderSent (boolean),
+
+  // Salle d'attente virtuelle :
+  waitingRoom {
+    joinedAt (Date),
+    position (Number),
+    estimatedWaitTime (minutes),
+    status (waiting/notified/in_consultation),
+    notifiedAt (Date)
+  },
+
+  // Pré-consultation :
+  preConsultation {
+    completed (boolean),
+    questionnaire [{ question, answer }],
+    documentsUploaded [],
+    submittedAt (Date)
+  },
+
+  // Post-consultation :
+  postConsultation {
+    summary (string, résumé généré par IA),
+    aiTranscript (string, transcription si enregistrement),
+    followUpSuggested (boolean),
+    suggestedFollowUpDate (Date),
+    prescriptionGenerated (boolean)
+  },
+
+  createdAt, updatedAt
+
+--- DOCUMENTS MÉDICAUX (upload patient) ---
+
+MEDICAL_DOCUMENT :
+  patientId (→User), doctorId (→User),
+  name, originalName,
+  type (analyse_sanguine/imagerie/prescription/radio/échographie/compte_rendu/ordonnance/autre),
+  category (laboratoire/imagerie/orientation/autre),
+  fileUrl, cloudinaryId, thumbnailUrl,
+  fileSize, mimeType,
+  uploadDate,
+  status (uploaded/ai_reviewed/doctor_reviewed/archived),
+
+  // PREMIÈRE ANALYSE IA (automatique à l'upload) :
+  aiAnalysis {
+    summary (string, résumé en langage simple),
+    keyFindings [{ parameter, value, status (normal/attention/critique), explanation, referenceRange }],
+    overallAssessment (string),
+    recommendedActions [{ action, priority (basse/moyenne/haute/critique), description }],
+    urgencyLevel (routine/attention/surveillance/urgent),
+    confidence (0-100),
+    generatedAt,
+    provider (openai/gemini/mistral),
+    cost (number, coût API)
+  },
+
+  // ANALYSE MÉDECIN (après review) :
+  doctorAnalysis {
+    doctorId (→User),
+    summary (string, diagnostic/diagnostic provisoire),
+    findings [{ parameter, doctorOpinion, clinicalSignificance }],
+    diagnosis (string ou null si en attente),
+    diagnosisCode (CIM-10, optionnel),
+    treatmentPlan (string),
+    prescriptions[] (liens vers prescriptions),
+    followUpNeeded (boolean), followUpType, followUpDelay,
+    differentialDiagnoses [{ diagnosis, probability, reasoning }],  // diagnostics différentiels IA
+    notes (notes cliniques détaillées),
+    reviewedAt,
+    signed (boolean),
+    signedAt (Date),
+    pdfReportUrl (url du PDF généré)
+  },
+
+  // AVIS DU PATIENT sur l'analyse :
+  patientFeedback {
+    understood (boolean), questions [],
+    rating (1-5), feedbackDate
+  }
+
+--- ANALYSES LABORATOIRE (extraction structurée) ---
+
+LAB_RESULT :
+  documentId (→MedicalDocument),
+  patientId (→User), doctorId (→User),
+  testName (NFS/Bilan hépatique/Glycémie/etc),
+  date,
+  parameters [{
+    name (ex: "Hémoglobine"), value (12.5), unit (g/dL),
+    normalRange { min, max },
+    status (normal/élevé/bas/critique),
+    deviation (pourcentage vs normale),
+    trend (stable/en_hausse/en_baisse),
+    previousValue (Number, valeur précédente pour comparaison)
+  }],
+  overallStatus (normal/attention/critique),
+  comparisonWithPrevious [{ parameter, previousValue, currentValue, change, trend }],
+  aiInterpretation (string), doctorInterpretation (string)
+
+--- MESSAGERIE MÉDECIN-PATIENT-SECRÉTAIRE (enrichie) ---
+
+CONVERSATION :
+  participants [{ userId (→User), role (patient/medecin/admin) }],
+  type (privée/groupe/annonce),
+  appointmentId (→Appointment, optionnel, liée à un RDV),
+  lastMessage { content, senderId, timestamp },
+  unreadCount { patient: number, medecin: number, admin: number },
+  isActive, createdAt, updatedAt
+
+MESSAGE :
+  conversationId (→Conversation),
+  senderId (→User),
+  senderRole (patient/medecin/admin/system),
+  content (texte), contentType (text/image/document/prescription/appointment/system/notification),
+  attachments [{ fileUrl, fileName, fileSize, mimeType, cloudinaryId }],
+  readBy [{ userId, readAt }],
+  deliveredAt, createdAt,
+  editedAt, deletedAt,
+  replyTo (→Message),
+  reactions [{ emoji, userId, createdAt }],
+  isUrgent (boolean),  // messages urgents → notification push + SMS + email
+  mentions [{ userId (→User) }],  // @nom pour notifier
+  threadId (→Message, pour fils de discussion),
+  templates [{ name, content }],  // messages pré-écrits
+
+--- APPELS VIDÉO (enrichis) ---
+
+VIDEO_CALL :
+  callerId (→User), calleeId (→User),
+  conversationId (→Conversation),
+  type (audio/vidéo),
+  status (ringing/en_cours/manqué/terminé/refusé),
+  startedAt, endedAt, duration (secondes),
+  signalData (WebRTC offer/answer/ICE candidates),
+
+  // Fonctionnalités enrichies :
+  features {
+    screenSharing (boolean),
+    recording (boolean),
+    whiteboard (boolean),
+    fileTransfer (boolean),
+    textChat (boolean),
+    noiseReduction (boolean)
+  },
+  recordingUrl (si enregistrement activé),
+  recordingConsent { callerConsent, calleeConsent },
+  transcript (string, transcription IA post-appel),
+  qualityRating (1-5),
+
+  createdAt, updatedAt
+
+--- APPEL GROUPE (téléconsultation de groupe) ---
+
+GROUP_CALL :
+  appointmentId (→Appointment),
+  participants [{ userId (→User), role (patient/medecin/specialiste/accompagnant) }],
+  initiatedBy (→User),
+  status (waiting/en_cours/terminé),
+  startedAt, endedAt,
+  maxParticipants,
+  createdAt
+
+--- PRÉSCRIPTIONS (enrichies) ---
+
+PRESCRIPTION :
+  patientId (→User), doctorId (→User), appointmentId (→Appointment),
+  documentId (→MedicalDocument, si liée à une analyse),
+  medications [{
+    name, genericName, dosage, unit, frequency,
+    times[], duration, startDate, endDate,
+    instructions, withFood, beforeOrAfterMeal,
+    refillCount, remainingRefills,
+    sideEffects[], interactions [],
+    therapeuticClass,  // classe thérapeutique
+    route (oral/topique/injectable/inhalation),  // voie d'administration
+    contraindications [],
+    refillReminderAt (Date)
+  }],
+  diagnosis, diagnosisCode (CIM-10 optionnel),
+  notes, validUntil,
+  status (active/terminée/annulée),
+  pharmacy { name, address, phone },
+  pdfUrl (PDF généré de l'ordonnance),
+  signedAt, signedBy (→User, médecin),
+  sentToPatient (boolean),
+  sentToPharmacy (boolean),
+
+  createdAt, updatedAt
+
+--- MÉDICAMENTS (rappels patient) ---
+
+MEDICATION_REMINDER :
+  patientId (→User), prescriptionId (→Prescription),
+  name, dosage, frequency, times[],
+  startDate, endDate,
+  remainingQuantity, refillReminderAt,
+  notifications, active,
+  adherenceLog [{ date, taken (boolean), time, notes }]
+
+--- TRAQUEUR DE SYMPTÔMES (enrichi) ---
+
+SYMPTOM_LOG :
+  patientId (→User), date,
+
+  // Saisie rapide (30 secondes) :
+  quickLog {
+    mood (1-5), painLevel (0-10), energyLevel (1-5)
+  },
+
+  // Saisie détaillée :
+  symptoms [{ name, severity (1-10), duration, location, triggers, bodyPart }],
+
+  // Mesures quotidiennes :
+  mood (1-5), sleepHours, sleepQuality (1-5),
+  exerciseMinutes, exerciseType,
+  waterIntake (cups), meals (number),
+  painLevel (0-10), energyLevel (1-5),
+  stressLevel (1-5),
+  weight (kg),
+
+  // Notes :
+  notes, photoUrl (photo du symptôme),
+  audioNotes (url enregistrement vocal, transcrit par IA),
+
+  // IA :
+  aiAnalysis (string),
+  aiSeverityScore (0-100),
+
+  // Partage :
+  sharedWithDoctor (boolean), doctorId (→User),
+  doctorNotes (string, notes du médecin sur cette saisie)
+
+--- GRAPHES / ANALYTICS PATIENT (calculés à la volée) ---
+
+PATIENT_METRICS (calculé, pas stocké séparément) :
+  patientId (→User), period (week/month/quarter/year),
+
+  consultationHistory [{ date, doctorName, type, urgencyDegree }],
+  healthScore (0-100),
+  trajectory (amélioration/stable/dégradation),
+  trajectoryData [{ date, score, label }],
+  vitalSignsTrend {
+    bloodPressure [{ date, systolic, diastolic }],
+    weight [{ date, value }],
+    bloodSugar [{ date, value, fasting }],
+    heartRate [{ date, value }]
+  },
+  medicationAdherence {
+    overall (percentage), byMedication [{ name, adherencePercent }],
+    missedDoses, totalDoses
+  },
+  alerts [{ type, message, severity }],
+  weeklyTrend (amélioration/stable/dégradation vs semaine précédente),
+  comparisonWithAverage { score, averageForAgeGroup, averageForCondition }
+
+--- SCORE SANTÉ (calculé et loggé) ---
+
+HEALTH_SCORE_LOG :
+  patientId (→User), date, score (0-100),
+  components [
+    { name (activité_physique/sommeil/humeur/adhérence_médicaments/fréquence_symptômes), weight, score, data }
+  ],
+  calculatedAt, period,
+  previousScore (Number),
+  trend (en_hausse/en_baisse/stable)
+
+--- GAMIFICATION ---
+
+GAMIFICATION_PROFILE :
+  userId (→User, patient uniquement),
+  points (Number, total),
+  level (Number, 1+),
+  badges [{ badgeId, earnedAt, name, description, icon }],
+  streak { currentDays, longestDays, lastLogDate },
+  challenges [{ challengeId, name, description, target, current, reward, startDate, endDate, completed }],
+  pointsHistory [{ action, points, date, description }],
+
+  createdAt, updatedAt
+
+BADGE_CATALOGUE :
+  id (unique),
+  name, description, icon,
+  category (santé/engagement/rendez-vous/communauté),
+  requirement { type, value },
+  points (Number)
+
+HEALTH_CHALLENGE :
+  name, description,
+  type (pas_quotidiens/sommeil/hydration/médicaments/symptômes),
+  target (Number),
+  duration (days),
+  reward (points),
+  startDate, endDate,
+  isActive
+
+--- CALENDRIER SANTÉ ---
+
+HEALTH_CALENDAR_EVENT :
+  userId (→User),
+  title, description,
+  type (médicament/rendez-vous/rappel/bilan/vaccination/exercice),
+  date, endDate,
+  reminderBefore (minutes),
+  recurring { frequency (daily/weekly/monthly), until (Date) },
+  color (hex),
+  linkedEntityId (String),  // ID de l'entité liée (RDV, prescription, etc.)
+  linkedEntityType (String),
+  completed (boolean),
+  createdAt
+
+--- NOTIFICATIONS (Système unifié enrichi pour tous les rôles) ---
+
+NOTIFICATION :
+  userId (→User, destinataire),
+  senderId (→User, émetteur — peut être système, médecin, ou secrétaire),
+  senderRole (system/medecin/admin),
+
+  // Catégorisation :
+  category (médicale/administrative/système/promotionnelle),
+  type (rendez-vous/document/message/prescription/rappel/système/urgence/rappel_abonnement/rappel_cabinet/rappel_médicament/analyse_prête/nouveau_patient/offre_promotionnelle),
+
+  title, message,
+  data { entityId, entityType, action (confirmer_rdv/voir_analyse/renouveler_abonnement), actionUrl },
+
+  read (boolean),
+  priority (low/medium/high/critical),  // 1-4 niveaux
+
+  // Actions rapides dans la notification :
+  quickActions [{ label, action, icon }],
+
+  // Planification :
+  scheduledFor (Date, pour notifications planifiées),
+  expiresAt (Date, TTL automatique 30 jours),
+
+  // Regroupement intelligent :
+  groupKey (string, ex: "nouveaux_messages_conv_123"),
+  groupCount (number),
+
+  // Traçabilité :
+  sentVia [{ channel (email/push/inApp/sms), sentAt, status }],
+  openedAt (Date),
+  clickedAt (Date),
+
+  createdAt
+
+  // Types de notifications enrichis :
+  // rappel_abonnement → niveaux J-30, J-15, J-3, J+0, J+7
+  // rappel_cabinet → médecin envoie "se présenter au cabinet" au patient
+  // rendrez-vous, document, message, prescription, système, urgence
+  // rappel_médicament → rappel prise médicament
+  // offre_promotionnelle → offres, newsletters
+
+--- ABONNEMENTS (pour dashboard admin) ---
+
+SUBSCRIPTION_LOG :
+  subscriptionId (→Subscription),
+  action (created/renewed/suspended/cancelled/expired/reminder_sent/grace_started/trial_started/trial_converted),
+  performedBy (→User, secrétaire),
+  details (string),
+  amount, currency,
+  createdAt
+
+--- LOYALTY & PARRAINAGE ---
+
+LOYALTY :
+  userId, points, history [{ type, amount, description, date }],
+  rewards [], referralCode (unique MED-XXX-XXXXXXX)
+
+--- TICKETS SUPPORT ---
+
+TICKET :
+  userId (→User, créateur),
+  assignedTo (→User, secrétaire assignée),
+  patientId (→User, patient concerné),
+  subject, description,
+  category (abonnement/technique/medical/administratif),
+  priority (basse/moyenne/haute/urgente),
+  status (ouvert/en_cours/en_attente/résolu/fermé),
+  messages [{ senderId, content, createdAt }],
+  resolution (string),
+  satisfactionRating (1-5),
+  createdAt, updatedAt
+
+--- AUDIT LOG (traçabilité complète) ---
+
+AUDIT_LOG :
+  userId (→User, acteur),
+  action (login/logout/view_patient/edit_patient/create_patient/create_appointment/edit_prescription/view_document/send_message/modify_subscription/access_record/change_role),
+  resource (user/patient_profile/subscription/appointment/prescription/document/message/notification),
+  resourceId (String),
+  details { before (object), after (object) },
+  ip (String),
+  userAgent (String),
+  level (info/warning/critical),
+  sessionId (String),
+  createdAt
+  // TTL: 12 mois minimum, indexé par userId + createdAt
+  // Conservation: signature HMAC pour non-répudiation
+
+--- ALERTES PATIENT (enrichies) ---
+
+PATIENT_ALERT :
+  patientId (→User), doctorId (→User),
+  type (dégradation_score/valeur_critique/adhérence_faible/sans_consultation/message_non_lu/interaction_médicamenteuse/résultat_analyse),
+  title, message, severity (info/warning/critical),
+  metricName, previousValue, currentValue,
+  resolved (boolean), resolvedAt, resolvedBy,
+  acknowledgedBy (→User),
+  createdAt
+
+--- AIDE À LA DÉCISION CLINIQUE (pour médecin) ---
+
+CLINICAL_DECISION :
+  patientId (→User), doctorId (→User),
+  type (score_risque/interaction_médicamenteuse/diagnostic_différentiel/recommandation_guideline),
+  input { symptoms [], analyses [], antécédents [], médicaments [] },
+  result {
+    riskScore (Number),
+    riskLevel (faible/moyen/élevé/critique),
+    recommendations [{ title, description, priority, source }],
+    differentialDiagnoses [{ diagnosis, probability, reasoning, icd10Code }],
+    drugInteractions [{ drug1, drug2, severity, description, recommendation }],
+    guidelines [{ title, source, url, recommendation }]
+  },
+  provider (openai/gemini/mistral),
+  confidence (0-100),
+  generatedAt,
+  reviewedByDoctor (boolean),
+  doctorNotes (string)
+
+--- RECHERCHE DOCUMENTAIRE (pour médecin) ---
+
+MEDICAL_LITERATURE :
+  doctorId (→User),
+  query (string),
+  results [{ title, authors, journal, year, abstract, url, pmid }],
+  saved (boolean),
+  tags [],
+  createdAt
+
+--- NOTES MÉDECIN ---
+
+PHYSICIAN_NOTE :
+  patientId (→User), doctorId (→User), appointmentId (→Appointment),
+  title, content, category (consultation/observation/instruction/followUp),
+  isPrivate (boolean),
+  tags [], createdAt, updatedAt
+
+--- LOG APPELS ---
+
+CALL_LOG :
+  callerId (→User), calleeId (→User),
+  type (audio/vidéo), status (completed/missed/rejected),
+  startedAt, endedAt, duration,
+  conversationId (→Conversation)
+
+--- RAPPORTS ANALYTICS (pour admin) ---
+
+ANALYTICS_REPORT :
+  clinicId (→Clinic),
+  period (daily/weekly/monthly/quarterly/yearly),
+  date (Date),
+  metrics {
+    totalPatients, newPatients, activePatients, churnedPatients,
+    totalDoctors, activeDoctors,
+    totalAppointments, completedAppointments, cancelledAppointments, noShows,
+    totalRevenue, revenueByPlan {}, revenueByDoctor {},
+    subscriptionRenewalRate, averagePatientLifetime,
+    averageWaitTime, averageConsultationDuration,
+    documentUploads, aiAnalysisCount,
+    patientSatisfactionScore
+  },
+  calculatedAt
+
+================================================================================
+FONCTIONNALITÉS — CÔTÉ SECRÉTAIRE/ADMIN (ENRICHIES)
+================================================================================
+
+1. AUTHENTIFICATION ADMIN
+   - Compte admin créé par le propriétaire de la clinique (seed script ou direct MongoDB)
+   - Login avec email/mot de passe + OTP (optionnel)
+   - Double authentification obligatoire pour admin
+   - Pas d'inscription publique pour admin
+   - Rôle "admin" dans le JWT
+   - Session timeout 30 minutes d'inactivité
+
+2. TABLEAU DE BORD ADMIN (Dashboard) — ENRICHI
+   a) STATISTIQUES GLOBALES :
+      - Nombre total de patients actifs
+      - Nombre total de médecins
+      - Abonnements actifs / expirés / suspendus / en période de grâce
+      - Nouveaux patients ce mois
+      - Revenus du mois (et tendance vs mois précédent)
+      - Taux de satisfaction patients
+      - Nombre de consultations ce mois
+
+   b) PATIENTS ACTIFS :
+      - Liste des patients avec :
+        * Nom, email, téléphone
+        * Médecin assigné
+        * Statut abonnement (actif/en_grâce/expiré/suspendu)
+        * Date de premier abonnement
+        * Date fin abonnement actuel
+        * Jours restants (avec code couleur)
+        * Prochain paiement
+        * Montant payé
+        * Score santé actuel
+      - Recherche et filtrage avancé
+      - Tri par date d'inscription, statut abonnement, score santé
+      - Export CSV/Excel des données patients
+
+   c) ABONNEMENTS — ENRICHI :
+      - Vue d'ensemble : combien par type (mensuel/trimestriel/semestre/annuel)
+      - Graphique Recharts : répartition abonnements par type (PieChart)
+      - Graphique Recharts : revenus par mois (BarChart)
+      - Graphique Recharts : taux de renouvellement (LineChart)
+      - Liste des prochains paiements à venir
+      - Liste des abonnements expirés/non renouvelés
+      - Liste des abonnements en période de grâce
+      - Liste des essais gratuits en cours
+      - Vue calendrier des échéances (heatmap)
+      - Filtrage par statut (actif / expire bientôt / expiré / suspendu / grâce / essai)
+      - Export des listes d'abonnés à relancer
+      - Statistiques : taux de renouvellement, revenus récurrents, LTV patient
+
+   d) ALERTES AUTOMATIQUES MULTI-NIVEAUX :
+      - J-30 : notification "votre abonnement expire dans 30 jours"
+      - J-15 : rappel plus insistant
+      - J-3 : notification critique
+      - J+0 : accès restreint
+      - J+7 : accès suspendu si non-renouvelé
+      - La secrétaire voit la liste des patients par niveau d'alerte
+      - Elle peut envoyer un rappel direct au patient via l'application
+      - Le patient reçoit notification push + email de rappel
+
+   e) PATIENTS NON RENOUVELÉS :
+      - Liste des patients dont l'abonnement est expiré
+      - Depuis combien de jours expiré
+      - Dernière date de paiement
+      - Bouton "Envoyer rappel" / "Suspendre accès"
+      - Historique des relances effectuées
+
+3. CRÉER UN COMPTE PATIENT — ENRICHI
+   - Formulaire wizard multi-étapes complet :
+     * Étape 1: Identité (Nom, email, téléphone)
+     * Étape 2: Informations personnelles (date naissance, sexe, groupe sanguin, adresse)
+     * Étape 3: Contact urgence + Assurance
+     * Étape 4: Médecin assigné (liste déroulante des médecins)
+     * Étape 5: Abonnement (type, montant, méthode paiement, preuve)
+   - Validation avec Zod (tous les champs obligatoires vérifiés)
+   - Création du compte :
+     * Génération du numéro patient unique (MED-XXXX-XXXX)
+     * Hashage du mot de passe
+     * Envoi email de bienvenue avec identifiants (email + mot de passe temporaire)
+     * Création de l'abonnement avec dates calculées
+     * Notification au médecin assigné (nouveau patient)
+     * Option : période d'essai gratuite de X jours
+   - Résumé affiché après création avec les identifiants à remettre au patient
+
+4. GESTION DES ABONNEMENTS — ENRICHIE
+   - Visualiser tous les abonnements
+   - Renouveler un abonnement (même type ou changer)
+   - Suspendre un abonnement (patient ne paie plus)
+   - Annuler un abonnement
+   - Historique de paiements complet par patient
+   - Modification du type d'abonnement avec recalcul des dates
+   - Gestion des paiements fractionnés
+   - Application de codes promotionnels
+   - Activation/désactivation renouvellement automatique
+   - Gestion des remboursements et avoirs
+   - Vue calendrier des échéances avec filtrage
+
+5. NOTIFICATIONS ADMIN — ENRICHIES
+   - Cloche de notifications temps réel
+   - Notifications non lues avec compteur
+   - Catégorisation : médicale, administrative, système, promotionnelle
+   - Priorisation : critique (push+SMS+email), élevée (push+email), moyenne (push), basse (email)
+   - Actions rapides dans les notifications (confirmer RDV, voir analyse)
+   - Filtrage par catégorie et par priorité
+   - Regroupement des notifications similaires
+   - Marquer comme lu individuellement ou en masse
+   - Historique complet des notifications envoyées
+
+6. ENVOI DE RAPPELS AUX PATIENTS — ENRICHI
+   - La secrétaire peut envoyer un message/rappel à un patient
+   - Templates de messages prédéfinis pour les situations courantes
+   - Messages personnalisés avec fusion de champs (nom, médecin, date RDV)
+   - Le patient reçoit :
+     * Notification push dans l'app
+     * Email (optionnel via Brevo)
+   - Historique des rappels envoyés
+
+7. GÉRER LES PATIENTS — ENRICHI
+   - Liste de tous les patients créés
+   - Modifier les informations d'un patient
+   - Voir l'historique des abonnements
+   - Voir les documents médicaux du patient
+   - Désactiver/Réactiver un compte patient
+   - Réassigner un médecin
+   - Voir les alertes patient (dégradation, valeurs critiques)
+   - Export des données patient (conformité RGPD)
+
+8. NEWSLETTERS & COMMUNICATIONS MARKETING — NOUVEAU
+   - Création de newsletters avec template
+   - Envoi par segment (médecin traitant, pathologie, type abonnement)
+   - Personnalisation avec fusion de champs
+   - Calendrier éditorial : planification des communications
+   - Statistiques d'envoi (taux d'ouverture, clics)
+   - Consentement marketing vérifié avant envoi
+
+9. ANALYTICS & BUSINESS INTELLIGENCE — NOUVEAU
+   - Tableau de bord : indicateurs clés en temps réel
+   - Rétention : taux de renouvellement, durée de vie patient (LTV)
+   - Revenus : CA global, par médecin, par type d'abonnement
+   - Coût d'acquisition patient
+   - Prévisions : projection des revenus sur 12 mois
+   - Graphiques : évolution patients, revenus, abonnements
+   - Export rapports PDF/Excel
+
+10. GESTION MULTI-CLINIQUES — NOUVEAU
+    - Si plusieurs cabinets : consolidation des données
+    - Vues par établissement
+    - Transfert de patients entre cliniques
+    - Tableau de bord comparatif
+
+11. TICKETS SUPPORT — NOUVEAU
+    - Création de tickets pour demandes complexes
+    - Suivi des tickets par la secrétaire
+    - Priorisation automatique
+    - Résolution avec feedback patient
+
+12. JOURNAL D'AUDIT — NOUVEAU
+    - Traçabilité complète de toutes les actions critiques
+    - Qui, quoi, quand, où (IP), avec quoi (user-agent)
+    - Filtrage par utilisateur, action, date, ressource
+    - Export des logs
+    - Conservation 12 mois minimum
+
+13. PARAMÈTRES CLINIQUE — NOUVEAU
+    - Configuration de la clinique (nom, adresse, logo)
+    - Template emails personnalisables
+    - Tarifs par défaut
+    - Import CSV de patients existants
+    - Personnalisation (logo, couleurs, messages automatiques)
+
+================================================================================
+FONCTIONNALITÉS — CÔTÉ PATIENT (ENRICHIES)
+================================================================================
+
+1. CONNEXION (pas d'inscription !) — ENRICHI
+   - Le patient reçoit ses identifiants de la secrétaire
+   - Page de login simple : email + mot de passe
+   - Si premier connexion : changement mot de passe obligatoire
+   - Vérification téléphone : SMS OTP (optionnel)
+   - Consentement RGPD : lecture + acceptation (version simplifiée)
+   - Si abonnement expiré : message "Votre abonnement a expiré, contactez la clinique"
+   - Interface personnalisée selon son profil
+   - Biométrie : empreinte digitale / Face ID (optionnel sur mobile)
+
+2. TOUR GUIDÉ D'ONBOARDING — NOUVEAU
+   - Découverte interactive des principales fonctionnalités
+   - 4-5 étapes clés avec tooltips
+   - Skip optionnel
+   - Badges de progression dans l'utilisation
+
+3. DASHBOARD PATIENT INTERACTIF — ENRICHI
+   a) SCORE DE SANTÉ PERSONNALISÉ :
+      - Calcul dynamique basé sur :
+        * Activité physique (pas, exercices)
+        * Sommeil (durée, qualité)
+        * Humeur (saisie quotidienne)
+        * Adhérence aux médicaments
+        * Fréquence des symptômes
+      - Évolution dans le temps avec graphique
+      - Comparaison avec la moyenne des patients similaires (âge, pathologie)
+      - Objectifs personnalisés avec progression
+      - Code couleur : vert (bon) → orange (attention) → rouge (critique)
+
+   b) CALENDRIER SANTÉ INTELLIGENT :
+      - Vue mensuelle avec tous les événements : médicaments, RDV, rappels
+      - Code couleur par type d'événement
+      - Glisser-déposer pour planifier des rappels
+      - Synchronisation avec Google Calendar / Outlook (export .ics)
+
+   c) GAMIFICATION :
+      - Points pour chaque action santé :
+        * Saisie quotidienne symptômes (+10 pts)
+        * Respect des médicaments (+5 pts/jour)
+        * Upload document (+15 pts)
+        * RDV suivi (+20 pts)
+        *objectif atteint (+25 pts)
+      - Niveaux de "santé" avec badges
+        * Niveau 1: Débutant (0-100 pts)
+        * Niveau 2: Acteur Santé (101-500 pts)
+        * Niveau 3: Champion Santé (501-1500 pts)
+        * Niveau 4: Expert Bien-être (1501-5000 pts)
+        * Niveau 5: Légende MedCare (5000+ pts)
+      - Défis santé (ex: "Objectif 10 000 pas par jour", "7 jours sans oubli médicament")
+      - Série de connexion (streak)
+      - Récompenses (réductions sur prochains rendez-vous)
+      - Classement anonyme optionnel avec d'autres patients
+
+   d) RÉSUMÉ RAPIDE :
+      * Prochains RDV
+      * Statut abonnement
+      * Dernier score santé
+      * Médicaments du jour
+      * Messages non lus
+
+4. MON DOSSIER MÉDICAL — ENRICHI
+   - Vue complète : allergies, conditions chroniques, antécédents
+   - Graphiques : tension, poids/IMC, glycémie, cholestérol
+   - Historique des consultations (chronologie interactive)
+   - Filtres par type (consultations, analyses, prescriptions)
+   - Notes personnelles
+   - Timeline visuelle des traitements
+   - Export sélectif (partie du dossier à partager avec un autre médecin)
+
+5. UPLOAD DE DOCUMENTS & ANALYSES — ENRICHI
+   - Upload documents (PDF/images)
+   - PREMIÈRE ANALYSE IA AUTOMATIQUE avec :
+     * Résumé en langage simple
+     * Paramètres clés avec statut (normal/attention/critique)
+     * Niveau d'urgence
+     * Actions recommandées
+   - Notification quand le médecin a donné son avis
+   - Statut : uploaded → ai_reviewed → doctor_reviewed
+   - Possibilité de poser des questions sur l'analyse via l'IA
+
+6. JOURNAL DE SANTÉ MULTI-FORMAT — NOUVEAU
+   a) SAISIE RAPIDE (30 secondes) :
+      - Humeur, douleur, énergie (sliders)
+   b) SAISIE DÉTAILLÉE :
+      - Questionnaire complet sur les symptômes
+   c) SAISIE VISUELLE :
+      - Photo des symptômes (éruption, blessure, etc.)
+   d) SAISIE AUDIO :
+      - Enregistrement vocal transcrit par IA
+   e) IMPORT DOCUMENTS :
+      - PDF de documents externes
+
+7. COACHING SANTÉ AUTOMATISÉ — NOUVEAU
+   - Recommandations personnalisées basées sur les données saisies
+   - Articles éducatifs adaptés au profil
+   - Reminders pour les bilans de santé réguliers
+   - Défis santé hebdomadaires
+   - Objectifs personnalisés avec progression
+   - Alertes si dégradation détectée
+
+8. PRENDRE RENDEZ-VOUS — ENRICHI
+   - Calendrier interactif avec disponibilité réelle du médecin
+   - Créneaux de 15, 30 ou 60 minutes
+   - Sélection du motif de consultation
+   - Choix type + degré d'urgence
+   - IA calcule score d'urgence
+   - Rappel automatique 24h avant
+   - Pré-consultation : questionnaire à remplir avant l'appel
+   - Confirmation email + notification
+
+9. SALLE D'ATTENTE VIRTUELLE — NOUVEAU
+   - File d'attente numérique avec position en temps réel
+   - Estimation du temps d'attente
+   - Notifications "le médecin est prêt"
+   - Statut du médecin : disponible, en consultation, en pause
+   - Chat avec la secrétaire pendant l'attente
+   - Documentation à remplir en attendant
+
+10. MES NOTIFICATIONS (Patient reçoit de DEUX sources) — ENRICHIES
+    a) Notifications du MÉDECIN :
+       - "Dr X vous demande de vous présenter au cabinet le [date]"
+       - "Votre analyse a été reviewée"
+       - "Nouvelle prescription disponible"
+       - Rappel RDV (24h avant)
+       - Actions rapides : confirmer, reporter
+
+    b) Notifications de la SECRÉTAIRE :
+       - "Votre abonnement expire dans 3 jours, veuillez renouveler"
+       - "Bienvenue chez MedCare AI ! Voici vos identifiants..."
+       - "Votre abonnement a été renouvelé avec succès"
+       - Messages personnalisés de la clinique
+
+    c) Notifications SYSTÈME :
+       - Rappel prise de médicaments
+       - Alerte valeur critique
+       - Défi santé du jour
+
+    d) Notifications CATÉGORISÉES :
+       - Médicales : résultats, prescriptions, rappels médicaux
+       - Administratives : abonnements, paiements, RDV
+       - Système : mises à jour, sécurité
+       - Promotionnelles : offres, newsletters
+
+11. MESSAGERIE AVEC MON MÉDECIN — ENRICHIE
+    - Conversations texte + documents
+    - Notifications temps réel
+    - Messages urgents (notification push + SMS + email)
+    - Mentions @nom
+    - Réactions emojis
+    - Fils de discussion (réponses)
+    - Templates messages prédéfinis
+    - Réponses rapides
+
+12. APPELS VIDÉO / AUDIO — ENRICHI
+    - Appel WebRTC avec le médecin
+    - Partage d'écran pour montrer résultats
+    - Tableau blanc partagé pour annotations
+    - Envoi de fichiers pendant l'appel
+    - Chat textuel parallèle à la vidéo
+    - Enregistrement avec consentement mutuel
+    - Réduction de bruit intégrée
+    - Post-appel : résumé automatique (transcription IA)
+
+13. TÉLÉCONSULTATION DE GROUPE — NOUVEAU
+    - Appel avec plusieurs médecins (staff meeting)
+    - Implication d'un spécialiste à la demande
+    - Famille ou accompagnant peut rejoindre
+
+14. MES RENDEZ-VOUS — ENRICHI
+    - Liste à venir + historique
+    - Statuts en temps réel
+    - Actions : reporter, annuler
+    - Pré-consultation à remplir
+    - Intégration calendrier externe (export .ics)
+
+15. MES PRESCRIPTIONS — ENRICHI
+    - Liste prescriptions + rappels médicaments
+    - Suivi adhérence (pris/pas pris)
+    - Vérification interactions médicamenteuses
+    - Renouvellement automatisé
+    - Envoi électronique à la pharmacie
+
+16. SUIVI QUOTIDIEN (SYMPTÔMES) — ENRICHI
+    - Saisie rapide (30 secondes) + saisie détaillée
+    - Photos des symptômes
+    - Notes vocales transcrites par IA
+    - Graphiques d'évolution
+    - Partage avec le médecin
+    - Analyse IA des tendances
+
+17. ASSISTANT IA MÉDICAL — ENRICHI
+    - Questions santé (jamais de diagnostic)
+    - Fallback keywords sans clé API
+    - Comprendre résultats analyses
+    - Informations sur médicaments
+    - Préparer questions pour le médecin
+    - Nutrition et mode de vie adapté
+
+18. MON ABONNEMENT — ENRICHI
+    - Statut actuel (actif/en_grâce/expiré/suspendu)
+    - Date de début et fin
+    - Jours restants avec barre de progression
+    - Prochain paiement
+    - Historique des paiements complet
+    - Type d'abonnement
+    - Option renouvellement automatique
+    - Codes promotionnels disponibles
+
+19. FIDÉLITÉ & PARRAINAGE — ENRICHI
+    - Points pour RDV suivis, documents uploadés, saisies quotidiennes
+    - Parrainage avec code unique
+    - Récompenses débloquables
+    - Niveaux de fidélité
+
+20. CALENDRIER SANTÉ INTELLIGENT — NOUVEAU
+    - Vue mensuelle avec tous les événements
+    - Code couleur par type
+    - Rappels personnalisés
+    - Synchronisation externe (export .ics)
+
+================================================================================
+FONCTIONNALITÉS — CÔTÉ MÉDECIN (ENRICHIES)
+================================================================================
+
+1. AUTHENTIFICATION & PROFIL MÉDECIN
+   - Inscription avec vérification licence
+   - Onboarding : spécialité, licenseNumber, hôpital, tarif
+   - Profil public
+   - Statut en temps réel (disponible/en consultation/absent)
+
+2. TABLEAU DE BORD MÉDECIN — ENRICHI
+   a) VUE D'ENSEMBLE :
+      - RDV aujourd'hui
+      - Documents à reviewer
+      - Messages non lus
+      - Patients avec alertes
+
+   b) VUE COHORTE (NOUVEAU) :
+      - Patients à risque (dégradation rapide)
+      - Alertes groupées (ex: "5 patients avec glycémie élevée ce mois-ci")
+      - Heatmap des pathologies les plus fréquentes
+      - Tendances dans la patientèle
+
+   c) ALERTES PATIENTS :
+      - Dégradation score santé
+      - Valeurs critiques
+      - Adhérence médicaments faible
+      - Patients sans consultation depuis longtemps
+
+3. MES PATIENTS — ENRICHI
+   - Liste patients avec dossier complet
+   - Nouveau patient assigné (notification admin)
+   - Recherche et filtrage avancé
+   - Vue "bilan rapide" : 1 page synthétique avec l'essentiel
+   - Graphiques interactifs : zoom, sélection de période
+   - Comparaison de séries de données (glycémie avant/après traitement)
+
+4. CONSULTER LES DOCUMENTS — ENRICHI
+   - Review documents patients
+   - Ajouter analyse médicale
+   - Signer numériquement
+   - Diagnostics différentiels suggérés par IA
+   - Annotations sur les résultats
+
+5. GRAPHIQUES PAR PATIENT (Recharts) — ENRICHI
+   a) Consultations (Line Chart)
+   b) Trajectoire santé (Area Chart)
+   c) Métriques vitales (Multi-Line)
+   d) Adhérence médicaments (Bar Chart)
+   e) Score santé + alertes
+   f) Comparaison avant/après traitement (dual chart)
+
+6. AIDE À LA DÉCISION CLINIQUE — NOUVEAU
+   a) SCORES DE RISQUE INTÉGRÉS :
+      - ASCVD (risque cardiovasculaire)
+      - QRISK
+      - CHA₂DS₂-VASc
+      - Autres scores par spécialité
+
+   b) ALERTES INTERACTIONS MÉDICAMENTEUSES :
+      - Vérification automatique des interactions
+      - Niveau de gravité (mineure/modérée/sévère/contrequelation)
+      - Recommandations alternatives
+
+   c) DIAGNOSTICS DIFFÉRENTIELS IA :
+      - Basés sur symptômes + analyses + antécédents
+      - Pourcentage de probabilité
+      - Sources et références
+
+   d) RECOMMANDATIONS GUIDELINES :
+      - Accès aux guidelines médicales actualisées
+      - Suggestions d'examens complémentaires
+      - Protocoles de traitement
+
+7. GÉRER LES RENDEZ-VOUS — ENRICHI
+   - Calendrier interactif avec disponibilité réelle
+   - Accepter/refuser/Reporter
+   - Notes après consultation
+   - Gestion salle d'attente virtuelle
+   - Suggestion IA des meilleurs créneaux
+   - Analyse des no-shows
+
+8. PRESCRIRE — ENRICHI
+   - Créer prescription, générer PDF
+   - Base de médicaments avec posologies recommandées
+   - Vérification des interactions avec traitements existants
+   - Génération automatique d'ordonnance PDF
+   - Historique des prescriptions par patient
+   - Rappels de renouvellement
+   - Envoi au patient et à la pharmacie
+
+9. MESSAGERIE AVEC PATIENTS — ENRICHI
+   - Messages + documents temps réel
+   - Statut en ligne des patients
+   - Messages urgents
+   - Templates réponses rapides
+
+10. APPELS VIDÉO / AUDIO — ENRICHI
+    - Initier/répondre appels WebRTC
+    - Screen sharing pour résultats
+    - Enregistrement avec consentement
+    - Résumé post-appel (transcription IA)
+
+11. NOTIFICATIONS MÉDECIN (peut envoyer aux patients) — ENRICHI
+    - "Se présenter au cabinet le [date] à [heure]"
+    - "Rappel: contrôle des constantes demandé"
+    - Notification push + email au patient
+    - Templates de notifications prédéfinis
+
+12. DOSSIERS PDF PATIENTS — ENRICHI
+    - PDF complet avec graphiques intégrés
+    - Export sélectif (parties spécifiques)
+    - Comparaison de périodes
+
+13. RECHERCHE DOCUMENTAIRE INTÉGRÉE — NOUVEAU
+    - Accès aux bases de données médicales (PubMed, Cochrane)
+    - Recherche d'articles par mot-clé
+    - Sauvegarde et partage d'articles entre médecins
+    - Veille scientifique personnalisée par spécialité
+
+14. GESTION DU TEMPS OPTIMISÉE — NOUVEAU
+    - Algorithmes IA pour suggérer les meilleurs créneaux
+    - Analyse des no-shows et recommandations
+    - Temps moyen par type de consultation
+    - Suggestions d'amélioration du flux de patients
+
+================================================================================
+MODÈLES SUPPLÉMENTAIRES
+================================================================================
+
+PATIENT_ALERT :  // (voir ci-dessus)
+
+HEALTH_SCORE_LOG :  // (voir ci-dessus)
+
+PHYSICIAN_NOTE :  // (voir ci-dessus)
+
+CALL_LOG :  // (voir ci-dessus)
+
+================================================================================
+ROUTE API — VERSION COMPLÈTE ENRICHIE
+================================================================================
+
+--- AUTH ---
+/api/auth/register         POST (médecin seulement — admin crée les patients)
+/api/auth/login            POST
+/api/auth/logout           POST
+/api/auth/refresh-token    POST
+/api/auth/forgot-password  POST
+/api/auth/reset-password   POST
+/api/auth/change-password  POST (première connexion patient)
+/api/auth/me               GET
+/api/auth/verify-otp       POST
+/api/auth/resend-otp       POST
+/api/auth/2fa/setup        POST (configurer double auth)
+/api/auth/2fa/verify       POST (vérifier code 2FA)
+/api/auth/2fa/disable      POST (désactiver 2FA)
+
+--- ADMIN/SECRÉTAIRE ---
+/api/admin/dashboard               GET       (stats globales enrichies)
+/api/admin/patients                GET       (liste patients avec abonnements)
+/api/admin/patients                POST      (créer nouveau patient)
+/api/admin/patients/:id            GET/PUT/DELETE (détail/modifier/désactiver)
+/api/admin/subscriptions           GET       (liste tous abonnements)
+/api/admin/subscriptions/:id       GET/PUT   (détail/modifier abonnement)
+/api/admin/subscriptions/:id/renew POST      (renouveler abonnement)
+/api/admin/subscriptions/:id/suspend POST    (suspendre)
+/api/admin/subscriptions/:id/cancel POST     (annuler)
+/api/admin/subscriptions/calendar  GET       (calendrier échéances)
+/api/admin/notifications           GET       (notifications admin)
+/api/admin/notifications/read-all  PUT
+/api/admin/notifications/:id/read  PUT
+/api/admin/send-reminder           POST      (envoyer rappel patient)
+/api/admin/logs                    GET       (logs d'audit)
+/api/admin/stats/revenue           GET       (revenus par période)
+/api/admin/stats/subscriptions     GET       (stats abonnements)
+/api/admin/stats/patients          GET       (stats patients)
+/api/admin/analytics               GET       (analytics BI)
+/api/admin/newsletters             GET/POST  (newsletters)
+/api/admin/newsletters/:id         GET/PUT/DELETE
+/api/admin/newsletters/:id/send    POST      (envoyer newsletter)
+/api/admin/promo-codes             GET/POST  (codes promotionnels)
+/api/admin/promo-codes/:id         PUT/DELETE
+/api/admin/tickets                 GET/POST  (tickets support)
+/api/admin/tickets/:id             GET/PUT
+/api/admin/audit-logs              GET       (journal audit)
+/api/admin/clinic                  GET/PUT   (paramètres clinique)
+/api/admin/clinic/patients/import  POST      (import CSV)
+/api/admin/export/patients         GET       (export Excel/CSV)
+/api/admin/export/subscriptions    GET       (export Excel/CSV)
+
+--- PATIENTS ---
+/api/patients/profile              GET/PUT     (dossier médical)
+/api/patients/metrics              GET         (graphes, trajectoire)
+/api/patients/metrics/:id          GET         (médecin voit métriques patient)
+/api/patients/search               GET         (recherche médecins)
+/api/patients/:id                  GET         (médecin accède dossier patient)
+/api/patients/subscription         GET         (mon abonnement)
+/api/patients/change-password      POST        (première connexion)
+/api/patients/health-score         GET         (score santé détaillé)
+/api/patients/health-calendar      GET/POST    (calendrier santé)
+/api/patients/health-calendar/:id  PUT/DELETE
+/api/patients/gamification         GET         (points, badges, défis)
+/api/patients/gamification/log     POST        (enregistrer action santé)
+/api/patients/gamification/challenges GET      (défis disponibles)
+/api/patients/health-journal       GET/POST    (journal santé)
+/api/patients/health-journal/:id   PUT/DELETE
+/api/patients/coaching             GET         (recommandations coaching)
+/api/patients/consent              POST        (enregistrer consentement RGPD)
+/api/patients/data-export          POST        (demander export données)
+/api/patients/data-delete          POST        (demander suppression compte)
+
+--- MÉDECINS ---
+/api/docteurs/profile              GET/PUT
+/api/docteurs/patients             GET
+/api/docteurs/patients/:id         GET
+/api/docteurs/slots                GET/PUT
+/api/docteurs/stats                GET
+/api/docteurs/send-to-patient      POST        (envoyer notification au patient)
+/api/docteurs/status               PUT          (mettre à jour statut en temps réel)
+/api/docteurs/clinical-decision    POST        (aide décision IA)
+/api/docteurs/drug-interactions    POST        (vérifier interactions)
+/api/docteurs/waiting-room         GET          (salle d'attente)
+/api/docteurs/waiting-room/:patientId/notify POST (notifier patient)
+/api/docteurs/literature           GET/POST     (recherche documentaire)
+/api/docteurs/literature/saved     GET          (articles sauvegardés)
+/api/docteurs/cohort               GET          (vue cohorte patients)
+
+--- DOCUMENTS MÉDICAUX ---
+/api/documents                     GET
+/api/documents/upload              POST
+/api/documents/:id                 GET
+/api/documents/:id/ai              GET
+/api/documents/:id/doctor          PUT
+/api/documents/:id/sign            PUT
+/api/documents/:id                 DELETE
+/api/documents/:id/compare         GET          (comparaison avec précédents)
+
+--- RENDEZ-VOUS ---
+/api/appointments                  GET
+/api/appointments                  POST
+/api/appointments/:id              GET/PUT
+/api/appointments/:id/cancel       PUT
+/api/appointments/:id/complete     PUT
+/api/appointments/:id/pre-consultation POST    (pré-consultation)
+/api/appointments/:id/waiting-room PUT          (rejoindre salle attente)
+/api/appointments/calendar-external GET          (export .ics)
+
+--- PRESCRIPTIONS ---
+/api/prescriptions                 GET
+/api/prescriptions                 POST
+/api/prescriptions/:id             GET
+/api/prescriptions/:id/pdf         GET
+/api/prescriptions/:id             PUT/DELETE
+/api/prescriptions/:id/send-pharmacy POST       (envoyer à pharmacie)
+/api/prescriptions/interactions    POST         (vérifier interactions)
+
+--- MÉDICAMENTS ---
+/api/medications                   GET/POST/PUT/DELETE
+/api/medications/adherence         GET
+/api/medications/refill            POST          (renouvellement ordonnance)
+
+--- MESSAGERIE ---
+/api/conversations                 GET
+/api/conversations                 POST
+/api/conversations/:id             GET
+/api/conversations/:id/messages    GET/POST
+/api/conversations/:id/read        PUT
+
+--- APPELS ---
+/api/calls/initiate                POST
+/api/calls/:id/answer              POST
+/api/calls/:id/end                 POST
+/api/calls/history                 GET
+/api/calls/signal                  POST
+/api/calls/group                   POST          (appel groupe)
+
+--- ANALYSES ---
+/api/analyses                      GET
+/api/analyses/:documentId          GET
+/api/analyses/compare              GET
+
+--- SYMPTÔMES ---
+/api/symptoms                      GET/POST
+/api/symptoms/trends               GET
+/api/symptoms/quick-log            POST          (saisie rapide 30s)
+/api/symptoms/audio                POST          (upload note vocale)
+
+--- NOTIFICATIONS (unifié) ---
+/api/notifications                 GET          (mes notifications, tous rôles)
+/api/notifications/unread-count    GET          (nombre non lues)
+/api/notifications/read-all        PUT
+/api/notifications/:id/read        PUT
+/api/notifications/:id             DELETE
+/api/notifications/send            POST         (admin envoie notification)
+/api/notifications/preferences     GET/PUT      (préférences notifications)
+/api/notifications/history         GET          (historique envoyées)
+/api/notifications/:id/action      POST         (action rapide notification)
+
+--- PDF DOSSIER ---
+/api/pdf/patient/:id               GET
+/api/pdf/patient/:id/selective     POST         (export sélectif)
+
+--- LOYALTY ---
+/api/loyalty                       GET
+/api/loyalty/earn                  POST
+/api/loyalty/rewards               GET
+/api/loyalty/redeem/:id            POST
+
+--- REFERRAL ---
+/api/referral/code                 GET
+/api/referral/stats                GET
+/api/referral/apply                POST
+
+--- TICKETS ---
+/api/tickets                       GET/POST
+/api/tickets/:id                   GET/PUT
+/api/tickets/:id/messages          POST
+
+--- AUDIT ---
+/api/audit                         GET          (logs audit, admin only)
+
+--- HEALTH ---
+/api/health                        GET          (santé système)
+
+--- EXPORT ---
+/api/export/patients               GET          (export CSV/Excel)
+/api/export/subscriptions          GET
+/api/export/analytics              GET
+/api/export/audit-logs             GET
+
+--- CLINIC ---
+/api/clinic                        GET/PUT      (paramètres clinique)
+/api/clinic/stats                  GET          (stats clinique)
+/api/clinic/doctors                GET          (médecins de la clinique)
+
+--- GAMIFICATION ---
+/api/gamification/profile          GET          (profil gamification)
+/api/gamification/log              POST         (enregistrer action)
+/api/gamification/badges           GET          (badges disponibles)
+/api/gamification/challenges       GET          (défis en cours)
+/api/gamification/leaderboard      GET          (classement)
+
+--- CALENDRIER SANTÉ ---
+/api/health-calendar               GET/POST
+/api/health-calendar/:id           PUT/DELETE
+/api/health-calendar/sync          POST          (sync calendrier externe)
+/api/health-calendar/export        GET           (export .ics)
+
+--- COACHING ---
+/api/coaching/recommendations      GET
+/api/coaching/challenges           GET
+/api/coaching/articles             GET
+/api/coaching/goals                GET/POST
+
+--- CONSENTEMENT RGPD ---
+/api/consent                       GET/POST
+/api/consent/history               GET
+/api/data/export                   POST          (demande export données)
+/api/data/delete                   POST          (demande suppression)
+
+--- WAITING ROOM ---
+/api/waiting-room                  GET          (file d'attente)
+/api/waiting-room/join             POST         (rejoindre file)
+/api/waiting-room/position         GET          (position actuelle)
+/api/waiting-room/notify           POST         (médecin notifie patient)
+
+--- NEWSLETTERS ---
+/api/newsletters                   GET/POST
+/api/newsletters/:id               GET/PUT/DELETE
+/api/newsletters/:id/send          POST
+/api/newsletters/:id/stats         GET
+
+--- PROMO CODES ---
+/api/promo-codes                   GET/POST
+/api/promo-codes/:id               PUT/DELETE
+/api/promo-codes/validate          POST         (valider code promo)
+
+--- ANALYTICS ---
+/api/analytics/dashboard           GET          (tableau de bord BI)
+/api/analytics/revenue             GET          (revenus détaillés)
+/api/analytics/patients            GET          (analytics patients)
+/api/analytics/subscriptions       GET          (analytics abonnements)
+/api/analytics/forecast            GET          (prévisions)
+
+================================================================================
+CRON JOB — VÉRIFICATION AUTOMATIQUE DES ABONNEMENTS (ENRICHI)
+================================================================================
+
+Tâche planifiée (exécutée quotidiennement à 8h00) :
+
+1. ALERTES MULTI-NIVEAUX (J-30, J-15, J-3) :
+   a) J-30 : endDate - 30 jours <= now && alerts.j30Sent == false
+      - Notification admin : "L'abonnement de [Patient] expire dans 30 jours"
+      - Notification patient : "Votre abonnement expire le [date]"
+      - alerts.j30Sent = true
+
+   b) J-15 : endDate - 15 jours <= now && alerts.j15Sent == false
+      - Notification admin : "ATTENTION: Abonnement [Patient] expire dans 15 jours"
+      - Notification patient : "RAPPEL: Votre abonnement expire dans 15 jours"
+      - alerts.j15Sent = true
+
+   c) J-3 : endDate - 3 jours <= now && alerts.j3Sent == false
+      - Notification admin CRITIQUE : "URGENT: Abonnement [Patient] expire dans 3 jours"
+      - Notification patient CRITIQUE : "Votre abonnement expire dans 3 jours!"
+      - Email Brevo à la secrétaire et au patient
+      - alerts.j3Sent = true
+
+2. EXPIRATION AUJOURD'HUI (J+0) :
+   - Query : endDate <= now && status == "actif"
+   - Pour chaque :
+     a) Mettre status = "expiré"
+     b) Si gracePeriodDays > 0 : status = "en_période_de_grâce", gracePeriodEnd = now + gracePeriodDays
+     c) Notification admin : "Abonnement de [Patient] expiré aujourd'hui"
+     d) alerts.j0Sent = true
+
+3. FIN PÉRIODE DE GRÂCE (J+7 ou configurable) :
+   - Query : gracePeriodEnd <= now && status == "en_période_de_grâce"
+   - Pour chaque :
+     a) Mettre status = "suspendu"
+     b) Notification admin : "Accès [Patient] suspendu (fin période de grâce)"
+     c) alerts.j7Sent = true
+     d) Restreindre accès patient
+
+4. ESSAI GRATUIT EXPIRÉ :
+   - Query : trialEndDate <= now && isTrialPeriod == true && trialConverted == false
+   - Pour chaque :
+     a) Notification patient : "Votre période d'essai est terminée"
+     b) Notification admin : "Essai gratuit de [Patient] terminé"
+     c) Proposer conversion en abonnement payant
+
+5. RENOUVELLEMENT AUTOMATIQUE :
+   - Query : autoRenewal == true && nextPaymentDate <= now
+   - Pour chaque :
+     a) Tenter le prélèvement (si paiement online)
+     b) Si succès : renouveler abonnement, créer Payment
+     c) Si échec : notification admin "Échec prélèvement [Patient]"
+
+6. PAIEMENTS FRACTIONNÉS :
+   - Query : installmentPlan.enabled == true && nextInstallmentDate <= now
+   - Pour chaque :
+     a) Traiter le paiement de l'échéance
+     b) Mettre à jour completedInstallments
+     c) Si dernier paiement : mettre à jour status
+
+7. RAPPELS MÉDICAMENTS :
+   - Query : medication reminders actifs, heure de prise
+   - Notification patient : "Il est temps de prendre [médicament]"
+
+8. ANALYTIQUES QUOTIDIENNES :
+   - Calculer et stocker les métriques quotidiennes dans AnalyticsReport
+   - Patients actifs, revenus, RDV, abonnements
+
+================================================================================
+MIDDLEWARE — VÉRIFICATION ABONNEMENT PATIENT (ENRICHI)
+================================================================================
+
+Middleware `checkSubscription` (à appliquer sur les routes patient) :
+
+- Vérifie que le patient a un abonnement actif OU en période de grâce
+- Si abonnement en période de grâce :
+  - Autoriser l'accès avec un header "X-Subscription-Grace: true"
+  - Afficher un bandeau d'avertissement côté client
+- Si abonnement expiré (hors période de grâce) → retourner 403 :
+  "Votre abonnement a expiré le [date]. Contactez la clinique pour renouveler."
+- Si abonnement suspendu → retourner 403 :
+  "Votre abonnement est suspendu. Contactez la clinique."
+- Si pas d'abonnement → retourner 404 :
+  "Aucun abonnement trouvé. Contactez la clinique."
+- Les routes exemptées : GET /api/auth/me, GET /api/patients/subscription,
+  POST /api/patients/change-password, GET /api/notifications,
+  GET /api/patients/gamification, GET /api/consent,
+  POST /api/data/export, POST /api/data/delete
+
+Middleware `auditLog` (à appliquer sur toutes les routes critiques) :
+
+- Journalise automatiquement chaque action
+- Enregistre : userId, action, resource, resourceId, ip, userAgent
+- Pour les modifications : capture avant/après
+- Stocke dans AuditLog avec TTL 12 mois
+
+Middleware `rateLimiter` (enrichi) :
+
+- Global : 100 requêtes / 15 minutes par IP
+- Login : 5 tentatives / 15 minutes par IP
+- OTP : 3 tentatives / 10 minutes par email
+- Upload : 20 requêtes / heure par utilisateur
+- API IA : 30 requêtes / heure par utilisateur
+
+Middleware `inputSanitizer` :
+
+- express-mongo-sanitize (protection NoSQL injection)
+- xss-clean (protection XSS)
+- hpp (protection HTTP parameter pollution)
+- express-validator sur toutes les routes
+
+================================================================================
+PROMPT SYSTÈME IA MÉDICAL (triple rôle) — ENRICHI
+================================================================================
+
+POUR LE PATIENT :
+"Tu es MedCare AI, un assistant médical bienveillant pour les patients.
+Tu aides à comprendre les résultats d'analyses en langage simple.
+Tu expliques les termes médicaux.
+Tu prépares le patient pour sa consultation.
+Tu ne fais JAMAIS de diagnostic final.
+Tu recommandes TOUJOURS de consulter le médecin.
+Tu alertes en cas de valeur critique (appeler le 15/112).
+Tu fournis des conseils de nutrition et mode de vie.
+Tu aidessuivre les symptômes et à préparer les questions pour le médecin.
+Tu expliques les prescriptions et les effets secondaires.
+
+DOMAINES :
+- Comprendre résultats analyses
+- Informations sur médicaments
+- Préparer liste de questions pour le médecin
+- Nutrition et mode de vie adapté
+- Suivi des symptômes
+- Expliquer termes médicaux
+- Préparer consultation"
+
+POUR LE MÉDECIN :
+"Tu es MedCare AI Assistant, un outil d'aide à la décision médicale pour les médecins.
+Tu aides à l'interprétation des analyses (suggestion, pas remplacement).
+Tu proposes des diagnostics différentiels possibles.
+Tu suggères des examens complémentaires.
+Tu calcules des scores de risque (ASCVD, QRISK, CHA₂DS₂-VASc, etc).
+Tu résumes les dossiers patients.
+Tu vérifies les interactions médicamenteuses.
+Tu suggères des guidelines et protocoles de traitement.
+Tu es un assistant, le médecin prend la décision finale.
+
+DOMAINES :
+- Interprétation analyses
+- Diagnostics différentiels
+- Scores de risque
+- Interactions médicamenteuses
+- Examens complémentaires
+- Guidelines médicales
+- Résumé dossiers patients"
+
+================================================================================
+VARIABLES D'ENVIRONNEMENT
+================================================================================
+
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=medcare_jwt_secret_...
+JWT_REFRESH_SECRET=medcare_refresh_secret_...
+CLIENT_URL=https://medcare-ai.vercel.app
+BREVO_API_KEY=xkeysib-...
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
+MISTRAL_API_KEY=...
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+REDIS_URL=redis://...              // NOUVEAU: pour mise en cache
+AUDIT_LOG_RETENTION_DAYS=365      // NOUVEAU: durée conservation logs
+GRACE_PERIOD_DEFAULT_DAYS=7       // NOUVEAU: période de grâce par défaut
+TRIAL_PERIOD_DAYS=7               // NOUVEAU: durée essai gratuit
+TWO_FACTOR_ENABLED_DEFAULT=false  // NOUVEAU: 2FA par défaut
+SESSION_TIMEOUT_MINUTES=30        // NOUVEAU: timeout session
+
+================================================================================
+DESIGN UI — ENRICHI
+================================================================================
+
+PALETTE :
+- Admin/Secrétaire : violet (#7c3aed), indigo (#6366f1), blanc, gris
+- Médecin : bleu médical (#2563eb), violet (#7c3aed), blanc, gris
+- Patient : vert santé (#10b981), bleu (#3b82f6), blanc, gris
+- Mode sombre : fond (#030712), cartes (#111827)
+- Urgence : vert → bleu → orange → rouge → rouge foncé
+- Abonnement : vert(actif) → orange(expirant bientôt) → rouge(expiré) → gris(suspendu) → bleu clair(période de grâce)
+- Trajectoire : vert(amélioration) → orange(stable) → rouge(dégradation)
+- Gamification : doré (#f59e0b), argent (#94a3b8), bronze (#d97706)
+- Score santé : vert(80-100) → jaune(60-79) → orange(40-59) → rouge(0-39)
+
+SIDEBAR ADAPTATIVE (3 versions) :
+
+a) SidebarAdmin (Secrétaire) :
+   - Dashboard (LayoutDashboard)
+   - Créer Patient (UserPlus)
+   - Mes Patients (Users)
+   - Abonnements (CreditCard)
+   - Notifications (Bell)
+   - Messagerie (MessageCircle)
+   - Newsletters (Mail)
+   - Analytics (BarChart3)
+   - Tickets (HelpCircle)
+   - Journal Audit (Shield)
+   - Paramètres (Settings)
+
+b) SidebarMedecin :
+   - Dashboard (LayoutDashboard)
+   - Mes Patients (Users)
+   - Documents (FileText)
+   - Rendez-vous (Calendar)
+   - Prescriptions (ClipboardList)
+   - Messagerie (MessageCircle)
+   - Appels (Phone)
+   - Notifications (Bell)
+   - Aide Décision (Brain)
+   - Salle Attente (Users)
+   - Recherche Médicale (Search)
+   - Paramètres (Settings)
+
+c) SidebarPatient :
+   - Mon Dossier (Heart)
+   - Documents (Upload)
+   - Rendez-vous (Calendar)
+   - Prescriptions (Pill)
+   - Messagerie (MessageCircle)
+   - Appels (Phone)
+   - Notifications (Bell)
+   - Mon Abonnement (CreditCard)
+   - Points Fidélité (Star)
+   - Calendrier Santé (CalendarDays)
+   - Journal Santé (BookOpen)
+   - Défis Santé (Trophy)
+   - Coaching (Lightbulb)
+   - Paramètres (Settings)
+
+ICÔNES LUCIDE :
+- Admin : LayoutDashboard, UserPlus, Users, CreditCard, Bell, MessageCircle, Mail, BarChart3, HelpCircle, Shield, Settings
+- Médecin : Stethoscope, Users, FileText, Brain, Activity, Calendar, Phone, Video, MessageCircle, ClipboardList, TrendingUp, AlertTriangle, Pen, Search, UsersRound
+- Patient : Heart, Pill, Upload, FileSearch, Calendar, MessageCircle, Phone, Bell, Activity, Droplets, Thermometer, BarChart3, CreditCard, Star, CalendarDays, BookOpen, Trophy, Lightbulb
+
+COMPOSANTS CLÉS — ENRICHI :
+- Sidebar adaptative (3 versions : admin/médecin/patient)
+- Dashboard adapté au rôle
+  * Admin : patients actifs, abonnements, graphiques revenus, analytics BI, calendrier échéances
+  * Médecin : RDV aujourd'hui, patients alertes, documents à reviewer, salle d'attente, aide décision
+  * Patient : ma santé, prochains RDV, statut abonnement, score santé, gamification, défis
+- Cards arrondies (rounded-2xl), ombres subtiles, dégradés
+- Animations Framer Motion
+- Graphiques Recharts : Line, Area, Bar, Radar, Pie, Composed
+- SubscriptionCard : composant réutilisable pour afficher abonnement
+- PatientCreationForm : formulaire wizard multi-étapes
+- NotificationBell : cloche avec compteur temps réel
+- HealthScoreCard : carte score santé avec évolution
+- GamificationBadge : badges et niveaux
+- HealthCalendar : calendrier santé intelligent
+- QuickHealthLog : saisie rapide symptômes
+- DoctorStatusIndicator : statut médecin temps réel
+- ClinicalDecisionCard : aide à la décision clinique
+- AppointmentCalendar : calendrier interactif RDV
+- WaitingRoom : salle d'attente virtuelle
+- ConsentModal : consentement RGPD
+- OnboardingTour : tour guidé d'onboarding
+- ExportButton : export PDF/Excel
+- AuditLogTable : tableau logs d'audit
+- Tableaux responsive pour listes patients/abonnements
+- Badge statut abonnement (actif/expiré/suspendu/en_grâce)
+- Progress bar temps restant abonnement
+- Toast notifications
+- Modal responsive pour actions CRUD
+
+GRAPHIQUES RECHARTS SPÉCIFIQUES — ENRICHI :
+1. Consultations History : <LineChart> points colorés par urgence
+2. Health Trajectory : <AreaChart> 3 zones colorées
+3. Vital Signs : <LineChart> multi-séries
+4. Medication Adherence : <BarChart> adhérence par médicament
+5. Urgency Distribution : <PieChart> répartition urgences
+6. Doctor Revenue : <BarChart> revenus par mois
+7. Subscription Distribution : <PieChart> abonnements par type (admin)
+8. Monthly Revenue : <BarChart> revenus mensuels (admin)
+9. Patient Growth : <LineChart> nouveaux patients par mois (admin)
+10. Health Score Evolution : <AreaChart> score santé dans le temps (patient)
+11. Gamification Points : <BarChart> points par semaine (patient)
+12. Cohort Analysis : <HeatMap> pathologies par fréquence (médecin)
+13. Risk Scores : <RadarChart> scores risque par catégorie (médecin)
+14. Subscription Renewal Rate : <LineChart> taux renouvellement (admin)
+15. Revenue Forecast : <AreaChart> prévisions revenus 12 mois (admin)
+16. Patient Satisfaction : <BarChart> scores satisfaction (admin)
+17. Comparison Before/After : <ComposedChart> avant/après traitement (médecin)
+
+================================================================================
+SÉCURITÉ RENFORCÉE — CONFORMITÉ RGPD / LOI 09-08
+================================================================================
+
+1. AUDIT LOG COMPLET :
+   - Journaliser TOUTES les actions critiques :
+     * Connexions et déconnexions
+     * Consultation de dossiers patients
+     * Modification de données sensibles
+     * Prescriptions et ordonnances
+     * Paiements et abonnements
+     * Changements de rôles/permissions
+   - Informations : qui, quoi, quand, où (IP), avec quoi (user-agent)
+   - Conservation : 12 mois minimum
+   - Non-répudiation : signature HMAC des logs
+
+2. CHIFFREMENT DES DONNÉES SENSIBLES :
+   - Données médicales : chiffrement au repos (MongoDB encryption)
+   - Données identifiantes : chiffrement en base
+   - Clés : rotation automatique
+   - Anonymisation : pour les backups et environnements de test
+
+3. CONFORMITÉ RGPD / LOI 09-08 :
+   - Consentement explicite pour chaque type de données :
+     * Données médicales : consentement séparé
+     * Données administratives : consentement séparé
+     * Communications marketing : consentement séparé
+     * Partage avec tiers : consentement séparé
+   - Droit à l'oubli : suppression complète avec délai de 30 jours
+   - Portabilité : export des données en JSON/PDF
+   - RGPD Officer : point de contact pour les demandes
+   - Registre des traitements : maintenu à jour
+
+4. POLITIQUE DE SÉCURITÉ RENFORCÉE :
+   - Mots de passe : longueur minimale 12 caractères, complexité
+   - Double authentification : optionnelle pour tous, obligatoire pour admin
+   - Session timeout : 30 minutes d'inactivité
+   - Rate limiting : par IP et par utilisateur
+   - Protection contre les attaques : XSS, CSRF, SQL injection, brute force
+
+5. CONTRÔLE D'ACCÈS GRANULAIRE :
+   - RBAC (Role-Based Access Control) : rôles et permissions
+   - ABAC (Attribute-Based Access Control) : par attributs
+   - Médecins : accès uniquement à leurs patients
+   - Secrétaires : accès uniquement aux patients qu'elles gèrent
+   - Patients : accès uniquement à leurs propres données
+   - Admin : accès complet avec audit trail
+
+6. SÉCURITÉ DES API :
+   - Validation stricte de tous les inputs (express-validator)
+   - Sanitization des outputs
+   - Headers de sécurité complets (HSTS, CSP, etc.)
+   - API keys pour les intégrations externes
+   - CORS configuré par domaine
+
+================================================================================
+SCALABILITÉ ET PERFORMANCE — VERSION PRODUCTION
+================================================================================
+
+1. MISE EN CACHE AVEC REDIS :
+   - Sessions : stockage des sessions utilisateur
+   - Données fréquentes : profils patients consultés souvent
+   - Analyses IA : cache des résultats pour éviter de re-analyser
+   - Listes paginées : cache des premières pages
+   - Notifications : cache des compteurs non lus
+   - TTL : expiration automatique des données cachées
+
+2. OPTIMISATION MONGODB :
+   - Index composés pour les requêtes fréquentes :
+     * patientId + date pour les rendez-vous
+     * patientId + status pour les documents
+     * doctorId + date pour les consultations
+     * userId + category pour les notifications
+   - Index géospatiaux pour les recherches de médecins proches
+   - Text search pour la recherche de patients
+   - TTL pour les notifications et logs
+   - Aggregation pipelines optimisés pour les dashboards
+
+3. PAGINATION AVANCÉE :
+   - Cursor-based pagination (plus performante que offset/limit)
+   - Pour les listes > 10 000 éléments
+   - Pour les flux de messages
+   - Pour l'historique des consultations
+
+4. OPTIMISATION DES REQUÊTES :
+   - Select champs : ne récupérer que les champs nécessaires
+   - Population : ne populate que les relations utilisées
+   - Lean queries : pour les opérations en lecture seule
+   - Projection : pour les listes et tableaux
+
+5. MISE À L'ÉCHELLE HORIZONTALE :
+   - Préparation pour plusieurs instances backend
+   - Sessions partagées (Redis)
+   - Uploads centralisés (Cloudinary)
+   - Load balancing
+
+6. MONITORING ET OBSERVABILITÉ :
+   - Logs structurés avec corrélation
+   - Métriques de performance (temps de réponse, taux d'erreur)
+   - Alertes en cas de dégradation
+   - Dashboard de santé du système
+
+================================================================================
+ONBOARDING UTILISATEUR — PARCOURS D'ACTIVATION COMPLET
+================================================================================
+
+1. PARCOURS D'ACTIVATION PATIENT :
+   a) Première connexion :
+      - Changement obligatoire du mot de passe
+      - Vérification téléphone : SMS OTP
+      - Consentement RGPD : lecture + acceptation (version simplifiée)
+   b) Questionnaire santé initial (5 minutes max) :
+      - Antécédents, allergies, médicaments
+      - Motif de la consultation
+   c) Tour guidé :
+      - Découverte interactive des principales fonctionnalités
+      - 4-5 étapes clés
+      - Skip optionnel
+
+2. PARCOURS D'ACTIVATION MÉDECIN :
+   - Vérification licence : upload du diplôme + vérification manuelle
+   - Configuration initiale : disponibilités, tarifs, spécialités
+   - Premier patient : guide pour ajouter un patient
+   - Paramètres : communication, notifications
+
+3. PARCOURS D'ACTIVATION ADMIN :
+   - Configuration de la clinique : nom, adresse, coordonnées
+   - Template emails
+   - Tarifs par défaut
+   - Import de données : CSV des patients existants
+   - Synchronisation agenda
+   - Personnalisation : logo, couleurs, messages automatiques
+
+4. ENGAGEMENT CONTINU :
+   - Emails de bienvenue échelonnés (J1, J3, J7, J15)
+   - Notifications de découverte ("Saviez-vous que vous pouvez...")
+   - Badges de progression dans l'utilisation
+   - Sondage de satisfaction après 1 mois
+
+================================================================================
+COMMUNICATION AVANCÉE — SYSTÈME ENRICHI
+================================================================================
+
+1. STATUT EN TEMPS RÉEL DES MÉDECINS :
+   - Indicateurs de présence :
+     * Disponible (vert)
+     * En consultation (jaune)
+     * En réunion (orange)
+     * Absent (rouge)
+     * Indisponible/congé (gris)
+   - Durée estimée avant disponibilité
+   - Notifications quand le médecin devient disponible
+
+2. SYSTÈME DE MESSAGERIE ENRICHI :
+   - Messages urgents : marquage "urgent" → notification push + SMS + email
+   - Escalade : si pas de réponse après 15 minutes, alerte manager
+   - Templates : messages pré-écrits pour les situations courantes
+   - Raccourcis : réponses rapides pour les médecins
+   - Mentions : @nom pour notifier quelqu'un
+   - Fils de discussion : replies pour structurer les échanges
+   - Réactions : emojis pour accuser réception
+
+3. SALLE D'ATTENTE VIRTUELLE :
+   - Patient connecté avant l'appel
+   - Statut de la consultation :
+     * "Dans 5 minutes"
+     * "Le médecin est en retard"
+     * "Le médecin prend un peu d'avance"
+   - Chat avec la secrétaire pendant l'attente
+   - Documentation à remplir en attendant
+
+4. AGENDA PARTAGÉ INTELLIGENT :
+   - Voir les disponibilités en temps réel
+   - Proposer des créneaux compatibles avec les deux emplois du temps
+   - Gestion des urgences : priorité sur les créneaux existants
+   - Reschedule : le patient peut demander un report
+   - Export .ics pour synchronisation externe
+
+5. SYSTÈME DE TICKETS :
+   - Pour les demandes complexes
+   - Suivi des tickets par la secrétaire
+   - Priorisation automatique
+   - Résolution avec feedback patient
+
+6. INTÉGRATION CALENDRIER EXTERNE :
+   - Synchronisation avec Google Calendar, Outlook, iCal
+   - Export .ics pour tous les RDV
+   - Création automatique d'événements
+
+================================================================================
+OPTIMISATIONS SUPPLÉMENTAIRES — VERSION COMPLÈTE
+================================================================================
+
+1. GESTION DES ERREURS AVANCÉE :
+   - Messages d'erreur clairs et utiles
+   - Fallback UI en cas d'échec
+   - Retry automatique pour les requêtes réseau
+   - Logs côté client pour déboguer
+   - Error boundary React
+
+2. MONITORING DE PERFORMANCE :
+   - Temps de chargement des pages
+   - Performance des requêtes API
+   - Taux d'erreur par endpoint
+   - Expérience utilisateur (Core Web Vitals)
+
+3. TESTS AUTOMATISÉS :
+   - Tests unitaires : modèles, services, utilitaires
+   - Tests d'intégration : API, base de données
+   - Tests E2E : parcours utilisateurs complets
+   - Tests de charge : 1000+ utilisateurs simultanés
+
+4. CI/CD :
+   - Pipeline GitHub Actions ou GitLab CI
+   - Tests automatiques sur chaque commit
+   - Déploiement automatisé en staging/production
+   - Rollback automatique en cas d'erreur
+
+5. DOCUMENTATION :
+   - Technique : Swagger/OpenAPI pour toutes les routes
+   - Utilisateur : aide en ligne intégrée
+   - Admin : manuel d'utilisation complet
+   - Développeur : README, guides d'installation
+
+6. INTERNATIONALISATION :
+   - Support complet de 3 langues (français, arabe, anglais)
+   - Détection automatique de la langue du navigateur
+   - Traductions gérées via fichiers JSON
+   - Date/heure, devise adaptées
+
+7. BACKUP ET RÉCUPÉRATION :
+   - Backup automatique quotidien de MongoDB
+   - Rétention : 30 jours de backups
+   - Procédure de restauration documentée
+   - Backup du stockage Cloudinary
+
+8. MODE DÉGRADÉ :
+   - En cas de panne partielle, fonctionnalités essentielles maintenues
+   - Messages d'information aux utilisateurs
+   - File d'attente des tâches (Bull/Redis) pour les opérations asynchrones
+
+9. ANALYTICS UTILISATEUR :
+   - Tracking des parcours (anonymisé)
+   - Heatmaps des clics
+   - Taux d'adoption des fonctionnalités
+   - Identification des points de friction
+   - Amélioration continue basée sur les données
+
+10. PWA (PROGRESSIVE WEB APP) :
+    - Installation sur écran d'accueil (Android et iOS)
+    - Accès au dossier patient sans connexion (offline)
+    - Notifications push natives et fiables
+    - Cache : chargement instantané des pages visitées
+    - Splash screen soigné
+    - Bundle minimal (< 200KB initial)
+    - Images responsives (webp, avif)
+    - Lazy loading agressif
+    - Optimisation des animations
+
+11. ACCESSIBILITÉ (A11Y) — WCAG 2.1 AA :
+    - Perceptible : alternatives textuelles, sous-titres, contraste 4.5:1
+    - Utilisable : navigation clavier, temps suffisant, labels descriptifs
+    - Compréhensible : langage clair, fonctionnalités prévisibles
+    - Robuste : compatibilité technologies d'assistance, ARIA
+    - Adaptation pour handicaps :
+      * Malvoyants : agrandissement police 200%, mode contraste élevé
+      * Moteurs : zones cliquables larges, raccourcis clavier
+      * Cognitifs : langage simplifié, progression pas à pas
+
+================================================================================
+FIN DU PROMPT — MedCare AI (Plateforme Complète Médecins + Patients + Admin)
+VERSION COMPLÈTE AMÉLIORÉE — Toutes les améliorations intégrées
+================================================================================

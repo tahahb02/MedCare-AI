@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-medcare-purple: #7c3aed;
+  --color-medcare-indigo: #6366f1;
+  --color-medcare-blue: #2563eb;
+  --color-medcare-green: #10b981;
+  --color-medcare-emerald: #059669;
+  --color-medcare-red: #ef4444;
+  --color-medcare-orange: #f97316;
+  --color-medcare-amber: #f59e0b;
+  --color-medcare-gold: #f59e0b;
+  --color-medcare-silver: #94a3b8;
+  --color-medcare-bronze: #d97706;
+  --color-dark-bg: #030712;
+  --color-dark-card: #111827;
+  --color-dark-border: #1f2937;
+  --color-dark-text: #9ca3af;
+  --color-dark-heading: #f3f4f6;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 transparent;
+}
+
+*::-webkit-scrollbar { width: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #6b7280; border-radius: 3px; }
+
+.dark body { background: #030712; color: #9ca3af; }
+.light body { background: #f9fafb; color: #374151; }
