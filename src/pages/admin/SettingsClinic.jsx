@@ -38,13 +38,13 @@ export default function SettingsClinic() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-clinic-settings'],
-    queryFn: async () => { const { data } = await api.get('/admin/clinic-settings'); return data; },
+    queryFn: async () => { const { data } = await api.get('/admin/clinic'); return data; },
   });
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { clinicName, address, phone, email, hours, currency, language, timezone, emailTemplate };
-      const { data } = await api.put('/admin/clinic-settings', payload);
+      const { data } = await api.put('/admin/clinic', payload);
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries('admin-clinic-settings'); toast.success('Paramètres sauvegardés'); },
@@ -56,7 +56,7 @@ export default function SettingsClinic() {
       if (!csvFile) return;
       const formData = new FormData();
       formData.append('file', csvFile);
-      const { data } = await api.post('/admin/import-csv', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const { data } = await api.post('/admin/patients/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       return data;
     },
     onSuccess: (data) => { toast.success(`${data?.imported || 0} lignes importées`); setCsvFile(null); },

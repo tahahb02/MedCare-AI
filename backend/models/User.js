@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   verifyMethod: { type: String, enum: ['email', 'whatsapp'], default: 'email' },
   isActive: { type: Boolean, default: true },
+  mustChangePassword: { type: Boolean, default: false },
   refreshToken: { type: String, select: false },
   lastLogin: Date,
   preferences: {

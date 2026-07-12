@@ -29,11 +29,11 @@ export default function NewsletterManager() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-newsletters'],
-    queryFn: async () => { const { data } = await api.get('/admin/newsletters'); return data; },
+    queryFn: async () => { const { data } = await api.get('/newsletters'); return data; },
   });
 
   const createMutation = useMutation({
-    mutationFn: async () => { const { data } = await api.post('/admin/newsletters', { title, content, segment }); return data; },
+    mutationFn: async () => { const { data } = await api.post('/newsletters', { title, content, segment }); return data; },
     onSuccess: () => {
       queryClient.invalidateQueries('admin-newsletters');
       toast.success('Newsletter créée');
@@ -43,7 +43,7 @@ export default function NewsletterManager() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: async (id) => { await api.post(`/admin/newsletters/${id}/send`); },
+    mutationFn: async (id) => { await api.post(`/newsletters/${id}/send`); },
     onSuccess: () => { queryClient.invalidateQueries('admin-newsletters'); toast.success('Newsletter envoyée !'); },
     onError: () => toast.error("Erreur lors de l'envoi"),
   });

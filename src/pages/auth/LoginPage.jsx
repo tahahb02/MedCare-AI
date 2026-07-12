@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Stethoscope, Shield, Heart } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Stethoscope } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ThemeToggle from '../../components/ThemeToggle';
 
@@ -16,6 +16,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
     setLoading(true);
     try {
       const data = await login(email, password);
@@ -23,21 +27,7 @@ export default function LoginPage() {
       const routeMap = { admin: '/admin', medecin: '/medecin', patient: '/patient' };
       navigate(routeMap[data.user.role] || '/login', { replace: true });
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Erreur de connexion');
-    } finally { setLoading(false); }
-  };
-
-  const quickLogin = async (accEmail, accPassword) => {
-    setEmail(accEmail);
-    setPassword(accPassword);
-    setLoading(true);
-    try {
-      const data = await login(accEmail, accPassword);
-      toast.success(`Bienvenue ${data.user.name} !`);
-      const routeMap = { admin: '/admin', medecin: '/medecin', patient: '/patient' };
-      navigate(routeMap[data.user.role] || '/login', { replace: true });
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Erreur de connexion');
+      toast.error(error.response?.data?.message || 'Email ou mot de passe incorrect');
     } finally { setLoading(false); }
   };
 
@@ -80,30 +70,12 @@ export default function LoginPage() {
             </button>
           </form>
           <div className="mt-4 text-center">
-            <a href="/forgot-password" className="text-sm text-medcare-purple hover:underline">Mot de passe oublié ?</a>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-100 dark:border-dark-border">
-            <p className="text-xs text-center text-gray-400 dark:text-dark-text mb-3">Accès rapide — Cliquez pour explorer</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => quickLogin('admin@medcare.com', 'MedCare2024!')} disabled={loading} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-violet-50 dark:bg-violet-500/10 hover:bg-violet-100 dark:hover:bg-violet-500/20 transition-colors border border-violet-200 dark:border-violet-500/20 disabled:opacity-50">
-                <Shield size={20} className="text-medcare-purple" />
-                <span className="text-xs font-medium text-medcare-purple">Secrétaire</span>
-              </button>
-              <button onClick={() => quickLogin('dr.fassi@medcare.com', 'MedCare2024!')} disabled={loading} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors border border-blue-200 dark:border-blue-500/20 disabled:opacity-50">
-                <Stethoscope size={20} className="text-medcare-blue" />
-                <span className="text-xs font-medium text-medcare-blue">Médecin</span>
-              </button>
-              <button onClick={() => quickLogin('mohammed@medcare.com', 'MedCare2024!')} disabled={loading} className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors border border-emerald-200 dark:border-emerald-500/20 disabled:opacity-50">
-                <Heart size={20} className="text-medcare-green" />
-                <span className="text-xs font-medium text-medcare-green">Patient</span>
-              </button>
-            </div>
+            <Link to="/forgot-password" className="text-sm text-medcare-purple hover:underline">Mot de passe oublié ?</Link>
           </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 dark:text-dark-text mt-6">
-          © 2024 MedCare AI — Plateforme Médicale Intelligente
+          © 2026 MedCare AI — Plateforme Médicale Intelligente
         </p>
       </motion.div>
     </div>

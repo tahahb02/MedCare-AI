@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dist-ssr/
+.env
+.env.*
+.mongo/
+.vscode/
+.idea/
+.git/
+.github/
+*.log
+Thumbs.db
+.vercel/

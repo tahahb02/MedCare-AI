@@ -30,13 +30,13 @@ export default function HealthCalendarPage() {
 
   const { data } = useQuery({
     queryKey: ['patient-calendar'],
-    queryFn: async () => { const { data } = await api.get('/symptoms/calendar'); return data; },
+    queryFn: async () => { const { data } = await api.get('/health-calendar'); return data; },
   });
 
   const addEventMutation = useMutation({
     mutationFn: async () => {
       const date = selectedDate || new Date().toISOString().split('T')[0];
-      const { data } = await api.post('/symptoms/calendar', { type: eventType, title: eventTitle, date, time: eventTime, reminder: eventReminder });
+      const { data } = await api.post('/health-calendar', { type: eventType, title: eventTitle, date, time: eventTime, reminder: eventReminder });
       return data;
     },
     onSuccess: () => { queryClient.invalidateQueries('patient-calendar'); toast.success('Événement ajouté'); setShowForm(false); setEventTitle(''); },

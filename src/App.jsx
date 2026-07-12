@@ -5,6 +5,8 @@ import { AnimatePresence } from 'framer-motion';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import ForceChangePasswordPage from './pages/auth/ForceChangePasswordPage';
 
 // Layouts
 import MainLayoutAdmin from './layouts/MainLayoutAdmin';
@@ -15,12 +17,14 @@ import MainLayoutPatient from './layouts/MainLayoutPatient';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CreatePatient from './pages/admin/CreatePatient';
 import PatientList from './pages/admin/PatientList';
+import PatientEditPage from './pages/admin/PatientEditPage';
 import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 import NotificationsAdmin from './pages/admin/NotificationsAdmin';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import AuditLogs from './pages/admin/AuditLogs';
 import NewsletterManager from './pages/admin/NewsletterManager';
 import SettingsClinic from './pages/admin/SettingsClinic';
+import CreateAppointmentAdmin from './pages/admin/CreateAppointmentAdmin';
 
 // Medecin
 import DoctorDashboard from './pages/medecin/DoctorDashboard';
@@ -29,6 +33,7 @@ import PatientDetailMedecin from './pages/medecin/PatientDetailMedecin';
 import DocumentsPage from './pages/medecin/DocumentsPage';
 import AppointmentsPage from './pages/medecin/AppointmentsPage';
 import PrescriptionsPage from './pages/medecin/PrescriptionsPage';
+import CreatePrescriptionPage from './pages/medecin/CreatePrescriptionPage';
 import ClinicalDecision from './pages/medecin/ClinicalDecision';
 import DrugInteractions from './pages/medecin/DrugInteractions';
 import WaitingRoomManagement from './pages/medecin/WaitingRoomManagement';
@@ -39,6 +44,7 @@ import PatientDashboard from './pages/patient/PatientDashboard';
 import DossierMedical from './pages/patient/DossierMedical';
 import DocumentsPatient from './pages/patient/DocumentsPatient';
 import AppointmentsPatient from './pages/patient/AppointmentsPatient';
+import CreateAppointmentPage from './pages/patient/CreateAppointmentPage';
 import PrescriptionsPatient from './pages/patient/PrescriptionsPatient';
 import SubscriptionPage from './pages/patient/SubscriptionPage';
 import HealthJournal from './pages/patient/HealthJournal';
@@ -63,6 +69,13 @@ function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
+  if (user.mustChangePassword && window.location.pathname !== '/force-change-password') {
+    return <Navigate to="/force-change-password" replace />;
+  }
+  if (!user.mustChangePassword && window.location.pathname === '/force-change-password') {
+    const redirectMap = { admin: '/admin', medecin: '/medecin', patient: '/patient' };
+    return <Navigate to={redirectMap[user.role] || '/login'} replace />;
+  }
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     const redirectMap = { admin: '/admin', medecin: '/medecin', patient: '/patient' };
     return <Navigate to={redirectMap[user.role] || '/login'} replace />;
@@ -79,11 +92,14 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/force-change-password" element={<ProtectedRoute allowedRoles={['admin', 'medecin', 'patient']}><ForceChangePasswordPage /></ProtectedRoute>} />
 
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><MainLayoutAdmin /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="create-patient" element={<CreatePatient />} />
           <Route path="patients" element={<PatientList />} />
+          <Route path="patients/:id/edit" element={<PatientEditPage />} />
           <Route path="subscriptions" element={<SubscriptionManagement />} />
           <Route path="notifications" element={<NotificationsAdmin />} />
           <Route path="messages" element={<MessagesPage />} />
@@ -91,6 +107,7 @@ export default function App() {
           <Route path="audit" element={<AuditLogs />} />
           <Route path="newsletters" element={<NewsletterManager />} />
           <Route path="settings" element={<SettingsClinic />} />
+          <Route path="create-appointment" element={<CreateAppointmentAdmin />} />
         </Route>
 
         <Route path="/medecin" element={<ProtectedRoute allowedRoles={['medecin']}><MainLayoutMedecin /></ProtectedRoute>}>
@@ -100,6 +117,7 @@ export default function App() {
           <Route path="documents" element={<DocumentsPage />} />
           <Route path="appointments" element={<AppointmentsPage />} />
           <Route path="prescriptions" element={<PrescriptionsPage />} />
+          <Route path="prescriptions/create" element={<CreatePrescriptionPage />} />
           <Route path="clinical-decision" element={<ClinicalDecision />} />
           <Route path="drug-interactions" element={<DrugInteractions />} />
           <Route path="waiting-room" element={<WaitingRoomManagement />} />
@@ -111,6 +129,7 @@ export default function App() {
           <Route path="dossier" element={<DossierMedical />} />
           <Route path="documents" element={<DocumentsPatient />} />
           <Route path="appointments" element={<AppointmentsPatient />} />
+          <Route path="appointments/create" element={<CreateAppointmentPage />} />
           <Route path="prescriptions" element={<PrescriptionsPatient />} />
           <Route path="subscription" element={<SubscriptionPage />} />
           <Route path="journal" element={<HealthJournal />} />

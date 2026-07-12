@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Search, Users, Mail, Phone, ExternalLink } from 'lucide-react';
+import { Search, Users, Mail, Phone, ExternalLink, Edit } from 'lucide-react';
 import api from '../../api/axios';
 import SubscriptionCard from '../../components/SubscriptionCard';
 import { formatDate, daysUntil } from '../../utils/helpers';
@@ -47,7 +47,7 @@ export default function PatientList() {
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-dark-text">{p.phone || 'N/A'}</td>
                   <td className="px-6 py-4"><SubscriptionCard subscription={p.subscription} compact /></td>
                   <td className="px-6 py-4 text-sm text-gray-600 dark:text-dark-text">{formatDate(p.subscription?.endDate)}</td>
-                  <td className="px-6 py-4 text-right"><Link to={`/admin/patients/${p._id}`} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-bg text-gray-500 inline-flex"><ExternalLink size={16} /></Link></td>
+                  <td className="px-6 py-4 text-right"><Link to={`/admin/patients/${p._id}/edit`} className="p-2 rounded-lg hover:bg-medcare-purple/10 text-medcare-purple inline-flex items-center gap-1 text-sm font-medium"><Edit size={14} /> Modifier</Link></td>
                 </motion.tr>
               ))}
               {(!data?.patients || data.patients.length === 0) && <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">Aucun patient trouvé</td></tr>}

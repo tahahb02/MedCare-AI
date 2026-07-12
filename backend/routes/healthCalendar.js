@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 
     const total = await HealthCalendarEvent.countDocuments(query);
 
-    res.json({ success: true, data: { events, total, page: parseInt(page), pages: Math.ceil(total / limit) } });
+    res.json({ events, total, page: parseInt(page), pages: Math.ceil(total / limit) });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.', error: error.message });
   }
@@ -33,19 +33,28 @@ router.get('/', async (req, res) => {
 // Create event
 router.post('/', async (req, res) => {
   try {
-    const { title, description, type, date, endDate, reminderBefore, recurring, color, linkedEntityId, linkedEntityType } = req.body;
-    if (!title || !type || !date) {
-      return res.status(400).json({ message: 'title, type et date requis.' });
+    const { title, description, type, date, endDate, reminderBefore, recurring, color, linkedEntityId, linkedEntityType, time, reminder } = req.body;
+    if (!title || !date) {
+      return res.status(400).json({ message: 'title et date requis.' });
+    }
+
+    const typeMap = { medication: 'médicament', medicament: 'médicament', appointment: 'rendez-vous', reminder: 'rappel', exercise: 'exercice', bilan: 'bilan', vaccination: 'vaccination' };
+    const normalizedType = typeMap[type] || type || 'rappel';
+
+    let eventDate = new Date(date);
+    if (time && typeof time === 'string') {
+      const [hours, minutes] = time.split(':').map(Number);
+      eventDate.setUTCHours(hours || 0, minutes || 0, 0, 0);
     }
 
     const event = await HealthCalendarEvent.create({
       userId: req.user._id,
       title,
       description,
-      type,
-      date: new Date(date),
+      type: normalizedType,
+      date: eventDate,
       endDate: endDate ? new Date(endDate) : undefined,
-      reminderBefore,
+      reminderBefore: reminder !== undefined ? (reminder ? 60 : 0) : reminderBefore,
       recurring,
       color,
       linkedEntityId,

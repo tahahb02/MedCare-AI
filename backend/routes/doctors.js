@@ -119,13 +119,14 @@ router.get('/stats', async (req, res) => {
   try {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const user = await User.findById(req.user._id).select('name');
     const [todayAppointments, totalPatients, pendingDocs, unreadMessages] = await Promise.all([
-      Appointment.countDocuments({ doctorId: req.user._id, date: { $gte: today }, date: { $lt: new Date(today.getTime() + 86400000) } }),
+      Appointment.countDocuments({ doctorId: req.user._id, date: { $gte: today, $lt: new Date(today.getTime() + 86400000) } }),
       PatientProfile.countDocuments({ primaryDoctorId: req.user._id }),
       MedicalDocument.countDocuments({ doctorId: req.user._id, status: 'uploaded' }),
       0
     ]);
-    res.json({ todayAppointments, totalPatients, pendingDocs, unreadMessages });
+    res.json({ name: user?.name, todayAppointments, totalPatients, pendingDocs, unreadMessages });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }

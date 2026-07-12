@@ -9,13 +9,15 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resetLink, setResetLink] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      const { data } = await api.post('/auth/forgot-password', { email });
       setSent(true);
+      setResetLink(data.resetToken ? `${window.location.origin}/reset-password?token=${data.resetToken}` : null);
       toast.success('Email de réinitialisation envoyé !');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Erreur');
@@ -39,6 +41,12 @@ export default function ForgotPasswordPage() {
               </div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Email envoyé !</h2>
               <p className="text-sm text-gray-500 dark:text-dark-text mb-6">Vérifiez votre boîte de réception pour réinitialiser votre mot de passe.</p>
+              {resetLink && (
+                <div className="mb-4 p-3 bg-gray-50 dark:bg-dark-bg rounded-xl">
+                  <p className="text-xs text-gray-500 mb-2">Lien de réinitialisation (pour tester sans email) :</p>
+                  <a href={resetLink} className="text-xs text-medcare-purple hover:underline break-all">{resetLink}</a>
+                </div>
+              )}
               <Link to="/login" className="inline-flex items-center gap-2 text-medcare-purple hover:underline text-sm font-medium"><ArrowLeft size={16} /> Retour à la connexion</Link>
             </div>
           ) : (

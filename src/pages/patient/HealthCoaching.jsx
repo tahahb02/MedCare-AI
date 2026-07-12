@@ -34,17 +34,17 @@ export default function HealthCoaching() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['patient-coaching'],
-    queryFn: async () => { const { data } = await api.get('/patient/coaching'); return data; },
+    queryFn: async () => { const { data } = await api.get('/coaching'); return data; },
   });
 
   const addGoalMutation = useMutation({
-    mutationFn: async () => { const { data } = await api.post('/patient/goals', { title: goalTitle, target: goalTarget, unit: goalUnit }); return data; },
+    mutationFn: async () => { const { data } = await api.post('/coaching/goals', { name: goalTitle, target: goalTarget, unit: goalUnit }); return data; },
     onSuccess: () => { queryClient.invalidateQueries('patient-coaching'); toast.success('Objectif créé !'); setShowGoalForm(false); setGoalTitle(''); setGoalTarget(''); setGoalUnit(''); },
     onError: () => toast.error('Erreur'),
   });
 
   const updateGoalMutation = useMutation({
-    mutationFn: async ({ id, progress }) => { const { data } = await api.put(`/patient/goals/${id}`, { progress }); return data; },
+    mutationFn: async ({ id, progress }) => { const { data } = await api.put(`/coaching/goals/${id}`, { progress }); return data; },
     onSuccess: () => queryClient.invalidateQueries('patient-coaching'),
     onError: () => toast.error('Erreur'),
   });

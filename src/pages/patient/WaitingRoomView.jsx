@@ -22,18 +22,18 @@ export default function WaitingRoomView() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['patient-waiting-room'],
-    queryFn: async () => { const { data } = await api.get('/patient/waiting-room'); return data; },
+    queryFn: async () => { const { data } = await api.get('/waiting-room/position'); return data; },
     refetchInterval: 30000,
   });
 
   const cancelMutation = useMutation({
-    mutationFn: async () => { await api.delete('/patient/waiting-room/cancel'); },
+    mutationFn: async () => { await api.post('/waiting-room/cancel'); },
     onSuccess: () => { queryClient.invalidateQueries('patient-waiting-room'); toast.success('Rendez-vous annulé'); },
     onError: () => toast.error("Erreur lors de l'annulation"),
   });
 
   const sendChatMutation = useMutation({
-    mutationFn: async (msg) => { const { data } = await api.post('/patient/waiting-room/chat', { message: msg }); return data; },
+    mutationFn: async (msg) => { const { data } = await api.post('/conversations', { content: msg }); return data; },
     onSuccess: (data) => {
       setChatMessages(prev => [...prev, { text: chatMessage, from: 'patient' }, ...(data?.reply ? [{ text: data.reply, from: 'secretary' }] : [])]);
       setChatMessage('');
@@ -42,7 +42,7 @@ export default function WaitingRoomView() {
   });
 
   const submitQuestionnaire = useMutation({
-    mutationFn: async () => { await api.post('/patient/waiting-room/questionnaire', questionnaire); },
+    mutationFn: async () => { await api.post('/waiting-room/questionnaire', questionnaire); },
     onSuccess: () => { queryClient.invalidateQueries('patient-waiting-room'); toast.success('Questionnaire envoyé'); setShowQuestionnaire(false); },
     onError: () => toast.error('Erreur'),
   });

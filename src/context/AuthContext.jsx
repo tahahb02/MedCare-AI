@@ -22,17 +22,6 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('accessToken');
     if (!token) { setLoading(false); return; }
 
-    if (token.startsWith('demo_token_')) {
-      try {
-        const demoUser = JSON.parse(localStorage.getItem('demo_user') || 'null');
-        const demoProfile = JSON.parse(localStorage.getItem('demo_profile') || 'null');
-        if (demoUser) { setUser(demoUser); setProfile(demoProfile); }
-        else { clearAuth(); }
-      } catch { clearAuth(); }
-      setLoading(false);
-      return;
-    }
-
     try {
       const { data } = await api.get('/auth/me');
       setUser(data.user);

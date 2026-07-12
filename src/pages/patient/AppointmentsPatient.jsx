@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Calendar, Clock, MapPin, Stethoscope } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Calendar, Clock, MapPin, Stethoscope, Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { formatDateTime, urgencyColor } from '../../utils/helpers';
 
@@ -11,7 +12,10 @@ export default function AppointmentsPatient() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Calendar size={24} className="text-medcare-green" /> Mes Rendez-vous</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Calendar size={24} className="text-medcare-green" /> Mes Rendez-vous</h1>
+        <Link to="/patient/appointments/create" className="px-4 py-2.5 rounded-xl bg-medcare-green text-white text-sm font-medium hover:bg-medcare-green/90 flex items-center gap-2"><Plus size={16} /> Nouveau RDV</Link>
+      </div>
 
       <div>
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">À venir</h2>

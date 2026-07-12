@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserPlus, ChevronRight, ChevronLeft, Check, Copy, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -20,29 +20,30 @@ export default function CreatePatient() {
   const [created, setCreated] = useState(null);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const schemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema];
 
   const form = useForm({ resolver: zodResolver(schemas[step - 1]), defaultValues: { name: '', email: '', phone: '', dateOfBirth: '', gender: '', bloodType: '', address: '', city: '', emergencyName: '', emergencyPhone: '', emergencyRelationship: '', insuranceProvider: '', insuranceNumber: '', primaryDoctorId: '', planType: 'mensuel', amount: 0, paymentMethod: 'especes' } });
 
-  const { data: doctors } = useQuery({ queryKey: ['doctors'], queryFn: async () => { const { data } = await api.get('/admin/patients?limit=100'); return data; }, enabled: step === 4 });
+  const { data: doctorsData, isLoading: doctorsLoading, error: doctorsError } = useQuery({ queryKey: ['admin-doctors'], queryFn: async () => { const { data } = await api.get('/admin/doctors'); return data; }, enabled: step === 4, retry: 1 });
 
-  const createMutation = useMutation({ mutationFn: async (values) => {
-    const payload = { name: values.name, email: values.email, phone: values.phone, password: 'MedCare2024!',
-      dateOfBirth: values.dateOfBirth, gender: values.gender, bloodType: values.bloodType, address: values.address, city: values.city,
-      emergencyContact: { name: values.emergencyName, phone: values.emergencyPhone, relationship: values.emergencyRelationship },
-      insuranceProvider: values.insuranceProvider, insuranceNumber: values.insuranceNumber, primaryDoctorId: values.primaryDoctorId || undefined,
-      subscription: values.planType ? { planType: values.planType, amount: values.amount || 0, paymentMethod: values.paymentMethod } : undefined
+  const createMutation = useMutation({ mutationFn: async (allValues) => {
+    const payload = { name: allValues.name, email: allValues.email, phone: allValues.phone,
+      dateOfBirth: allValues.dateOfBirth, gender: allValues.gender, bloodType: allValues.bloodType, address: allValues.address, city: allValues.city,
+      emergencyContact: { name: allValues.emergencyName, phone: allValues.emergencyPhone, relationship: allValues.emergencyRelationship },
+      insuranceProvider: allValues.insuranceProvider, insuranceNumber: allValues.insuranceNumber, primaryDoctorId: allValues.primaryDoctorId || undefined,
+      subscription: allValues.planType ? { planType: allValues.planType, amount: allValues.amount || 0, paymentMethod: allValues.paymentMethod } : undefined
     };
     const { data } = await api.post('/admin/patients', payload);
     return data;
-  }, onSuccess: (data) => { setCreated(data); toast.success('Patient créé avec succès !'); }, onError: (err) => toast.error(err.response?.data?.message || 'Erreur') });
+  }, onSuccess: (data) => { setCreated(data); queryClient.invalidateQueries({ queryKey: ['admin-patients'] }); toast.success('Patient créé avec succès !'); }, onError: (err) => toast.error(err.response?.data?.message || 'Erreur') });
 
   const nextStep = async () => { const valid = await form.trigger(); if (valid) setStep(s => Math.min(5, s + 1)); };
   const prevStep = () => setStep(s => Math.max(1, s - 1));
-  const onSubmit = (values) => createMutation.mutate(values);
+  const onSubmit = () => { const allValues = form.getValues(); createMutation.mutate(allValues); };
 
   const copyCredentials = () => {
-    navigator.clipboard.writeText(`Email: ${created.user.email}\nMot de passe: MedCare2024!`);
+    navigator.clipboard.writeText(`Email: ${created.user.email}\nMot de passe: ${created.temporaryPassword}`);
     setCopied(true);
     toast.success('Identifiants copiés !');
   };
@@ -57,15 +58,18 @@ export default function CreatePatient() {
             <CheckCircle className="text-medcare-green" size={32} />
           </div>
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Patient créé !</h2>
-          <p className="text-gray-500 dark:text-dark-text text-sm mb-6">Remettez ces identifiants au patient</p>
-          <div className="bg-gray-50 dark:bg-dark-bg rounded-xl p-4 text-left space-y-2 mb-6">
+          <p className="text-gray-500 dark:text-dark-text text-sm mb-6">Remettez ces identifiants au patient. Il devra changer son mot de passe à la première connexion.</p>
+          <div className="bg-gray-50 dark:bg-dark-bg rounded-xl p-4 text-left space-y-2 mb-4">
             <p className="text-sm"><span className="font-medium text-gray-700 dark:text-dark-text">Nom :</span> <span className="text-gray-900 dark:text-white">{created.user.name}</span></p>
             <p className="text-sm"><span className="font-medium text-gray-700 dark:text-dark-text">Email :</span> <span className="text-gray-900 dark:text-white">{created.user.email}</span></p>
-            <p className="text-sm"><span className="font-medium text-gray-700 dark:text-dark-text">Mot de passe :</span> <span className="text-gray-900 dark:text-white font-mono">{created.temporaryPassword}</span></p>
+            <p className="text-sm"><span className="font-medium text-gray-700 dark:text-dark-text">Mot de passe :</span> <span className="text-gray-900 dark:text-white font-mono bg-medcare-purple/10 px-2 py-0.5 rounded">{created.temporaryPassword}</span></p>
+          </div>
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3 mb-6">
+            <p className="text-xs text-amber-700 dark:text-amber-300">Le patient sera redirigé vers une page de changement de mot de passe lors de sa première connexion.</p>
           </div>
           <div className="flex gap-3">
             <button onClick={copyCredentials} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-dark-bg text-sm font-medium flex items-center justify-center gap-2">
-              {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? 'Copié !' : 'Copier'}
+              {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? 'Copié !' : 'Copier les identifiants'}
             </button>
             <button onClick={() => navigate('/admin/patients')} className="flex-1 py-2.5 rounded-xl bg-medcare-purple text-white text-sm font-medium hover:bg-medcare-purple/90">Voir les patients</button>
           </div>
@@ -123,7 +127,34 @@ export default function CreatePatient() {
               )}
               {step === 4 && (
                 <div className="space-y-4">
-                  <div><label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Médecin traitant</label><select {...form.register('primaryDoctorId')} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-white text-sm"><option value="">Aucun médecin assigné</option></select></div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1">Médecin traitant</label>
+                  {doctorsLoading ? (
+                    <div className="flex items-center gap-2 py-3 text-sm text-gray-500">
+                      <div className="w-4 h-4 border-2 border-medcare-purple border-t-transparent rounded-full animate-spin"></div>
+                      Chargement des médecins...
+                    </div>
+                  ) : doctorsError ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 rounded-xl p-3">Impossible de charger la liste des médecins. Vous pouvez continuer sans assigner de médecin.</p>
+                      <select {...form.register('primaryDoctorId')} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-white text-sm">
+                        <option value="">Aucun médecin assigné</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <>
+                      <select {...form.register('primaryDoctorId')} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-white text-sm">
+                        <option value="">Aucun médecin assigné</option>
+                        {(doctorsData?.doctors || []).map((doc) => (
+                          <option key={doc._id} value={doc._id}>
+                            Dr. {doc.name} {doc.specializations?.length > 0 ? `— ${doc.specializations[0].name}` : ''} {doc.currentStatus === 'disponible' ? '✓' : `(${doc.currentStatus})`}
+                          </option>
+                        ))}
+                      </select>
+                      {doctorsData?.doctors?.length === 0 && (
+                        <p className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3">Aucun médecin disponible. Créez un compte médecin d'abord.</p>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
               {step === 5 && (

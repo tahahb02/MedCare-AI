@@ -96,9 +96,9 @@ router.get('/goals', async (req, res) => {
 // Create goal
 router.post('/goals', async (req, res) => {
   try {
-    const { name, description, target, reward } = req.body;
-    if (!name || !target) {
-      return res.status(400).json({ message: 'name et target requis.' });
+    const { name, title, description, target, reward, unit } = req.body;
+    if (!name && !title || !target) {
+      return res.status(400).json({ message: 'name/title et target requis.' });
     }
 
     let profile = await GamificationProfile.findOne({ userId: req.user._id });
@@ -108,11 +108,12 @@ router.post('/goals', async (req, res) => {
 
     const goal = {
       challengeId: `custom-${Date.now()}`,
-      name,
+      name: name || title,
       description: description || '',
-      target,
+      target: Number(target),
       current: 0,
       reward: reward || 25,
+      unit: unit || '',
       startDate: new Date(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       completed: false
@@ -124,6 +125,41 @@ router.post('/goals', async (req, res) => {
     res.status(201).json({ success: true, data: goal });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.', error: error.message });
+  }
+});
+
+// Update goal progress
+router.put('/goals/:id', async (req, res) => {
+  try {
+    const { progress } = req.body;
+    let profile = await GamificationProfile.findOne({ userId: req.user._id });
+    if (!profile) return res.status(404).json({ message: 'Profil non trouvé.' });
+
+    const goal = profile.challenges.id(req.params.id);
+    if (!goal) return res.status(404).json({ message: 'Objectif non trouvé.' });
+
+    goal.current = Number(progress || 0);
+    if (goal.current >= goal.target) {
+      goal.completed = true;
+      profile.points += goal.reward || 0;
+      profile.level = Math.floor(profile.points / 500) + 1;
+    }
+    await profile.save();
+
+    res.json({ success: true, data: goal });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.', error: error.message });
+  }
+});
+
+// Get coaching summary
+router.get('/', async (req, res) => {
+  try {
+    const profile = await GamificationProfile.findOne({ userId: req.user._id });
+    const goals = profile?.challenges || [];
+    res.json({ recommendations: [], articles: healthArticles.slice(0, 3), goals, challenges: healthChallenges });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
   }
 });
 

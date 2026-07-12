@@ -25,23 +25,36 @@ router.get('/', async (req, res) => {
 // Create
 router.post('/', async (req, res) => {
   try {
-    const appointment = await Appointment.create({ ...req.body, patientId: req.body.patientId || req.user._id });
-    
-    const aiResult = await analyzeWithAI(`Consultation type: ${req.body.type}, Motif: ${req.body.reason}, Symptômes: ${req.body.symptoms?.join(', ')}`, 'patient');
-    if (aiResult) {
-      appointment.aiUrgencyScore = Math.min(100, Math.max(0, (req.body.urgencyDegree === 'critique' ? 90 : req.body.urgencyDegree === 'très_urgent' ? 75 : req.body.urgencyDegree === 'urgent' ? 60 : 40)));
-      await appointment.save();
-    }
+    const { patientId, doctorId, date, endDate, type, urgencyDegree, reason, symptoms, location, duration } = req.body;
+    const appointment = await Appointment.create({
+      patientId: patientId || req.user._id,
+      doctorId,
+      date,
+      endDate,
+      type: type || 'consultation',
+      urgencyDegree: urgencyDegree || 'normal',
+      reason,
+      symptoms,
+      location: location || 'cabinet',
+      duration: duration || 30
+    });
 
-    const targetUserId = req.user.role === 'patient' ? req.body.doctorId : req.body.patientId;
+    try {
+      appointment.aiUrgencyScore = urgencyDegree === 'critique' ? 90 : urgencyDegree === 'très_urgent' ? 75 : urgencyDegree === 'urgent' ? 60 : 40;
+      await appointment.save();
+    } catch (_) {}
+
+    const targetUserId = req.user.role === 'patient' ? doctorId : patientId;
     if (targetUserId) {
-      await Notification.create({
-        userId: targetUserId, senderId: req.user._id, senderRole: req.user.role,
-        category: 'médicale', type: 'rendez-vous',
-        title: 'Nouveau rendez-vous',
-        message: `Rendez-vous ${req.body.type || 'consultation'} prévu le ${new Date(req.body.date).toLocaleDateString('fr-FR')}`,
-        priority: 'medium'
-      });
+      try {
+        await Notification.create({
+          userId: targetUserId, senderId: req.user._id, senderRole: req.user.role,
+          category: 'médicale', type: 'rendez-vous',
+          title: 'Nouveau rendez-vous',
+          message: `Rendez-vous ${type || 'consultation'} prévu le ${new Date(date).toLocaleDateString('fr-FR')}`,
+          priority: 'medium'
+        });
+      } catch (_) {}
     }
 
     res.status(201).json({ appointment });

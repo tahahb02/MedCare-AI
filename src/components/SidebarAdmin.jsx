@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, UserPlus, Users, CreditCard, Bell, MessageCircle, Mail, BarChart3, Shield, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, UserPlus, Users, CreditCard, Bell, MessageCircle, Mail, BarChart3, Shield, Settings, LogOut, ChevronLeft, ChevronRight, CalendarPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useSidebar } from '../context/SidebarContext';
@@ -10,6 +10,7 @@ const links = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/create-patient', icon: UserPlus, label: 'Créer Patient' },
   { to: '/admin/patients', icon: Users, label: 'Mes Patients' },
+  { to: '/admin/create-appointment', icon: CalendarPlus, label: 'Nouveau RDV' },
   { to: '/admin/subscriptions', icon: CreditCard, label: 'Abonnements' },
   { to: '/admin/notifications', icon: Bell, label: 'Notifications' },
   { to: '/admin/messages', icon: MessageCircle, label: 'Messagerie' },

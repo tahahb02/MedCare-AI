@@ -19,7 +19,7 @@ export default function DrugInteractions() {
 
   const checkMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await api.post('/medecin/drug-interactions', { drugs });
+      const { data } = await api.post('/docteurs/drug-interactions', { drugs });
       return data;
     },
     onSuccess: (data) => { setResults(data); toast.success(`${(data?.interactions || []).length} interaction(s) trouvée(s)`); },

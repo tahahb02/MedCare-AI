@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 import User from './models/User.js';
 import PatientProfile from './models/PatientProfile.js';
 import DoctorProfile from './models/DoctorProfile.js';
@@ -94,7 +95,8 @@ export async function seed() {
   const patientUsers = [];
   const patientProfiles = [];
 
-  for (const pd of patientsData) {
+  for (let i = 0; i < patientsData.length; i++) {
+    const pd = patientsData[i];
     const u = await User.create({
       name: pd.name, email: pd.email, phone: pd.phone,
       password: pw, role: 'patient', isVerified: true, isActive: true
@@ -102,7 +104,7 @@ export async function seed() {
     patientUsers.push(u);
 
     const pp = await PatientProfile.create({
-      userId: u._id, medicalRecordNumber: `MED-2024-${String(patientUsers.length).padStart(4, '0')}`,
+      userId: u._id,       medicalRecordNumber: `MED-2024-${String(i + 1).padStart(4, '0')}`,
       dateOfBirth: new Date(pd.dob), gender: pd.gender, bloodType: pd.blood,
       city: pd.city, address: `${pd.city}, Maroc`,
       primaryDoctorId: doc1._id, createdBy: admin._id,

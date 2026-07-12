@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { ClipboardList, Pill } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ClipboardList, Pill, Plus } from 'lucide-react';
 import api from '../../api/axios';
 import { formatDate } from '../../utils/helpers';
 
@@ -8,7 +9,10 @@ export default function PrescriptionsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><ClipboardList size={24} className="text-medcare-blue" /> Prescriptions</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><ClipboardList size={24} className="text-medcare-blue" /> Prescriptions</h1>
+        <Link to="/medecin/prescriptions/create" className="px-4 py-2.5 rounded-xl bg-medcare-blue text-white text-sm font-medium hover:bg-medcare-blue/90 flex items-center gap-2"><Plus size={16} /> Nouvelle prescription</Link>
+      </div>
       <div className="space-y-4">
         {(data?.prescriptions || []).map(p => (
           <div key={p._id} className="bg-white dark:bg-dark-card rounded-2xl border border-gray-100 dark:border-dark-border p-5">

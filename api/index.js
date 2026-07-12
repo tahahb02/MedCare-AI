@@ -63,16 +63,27 @@ app.use('/api/export', exportRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/medications', medicationRoutes);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-let cachedConnection;
+let cachedConnection = null;
+
 async function connectDB() {
-  if (cachedConnection) return cachedConnection;
-  cachedConnection = await mongoose.connect(process.env.MONGODB_URI);
+  if (cachedConnection && mongoose.connection.readyState === 1) return cachedConnection;
+  cachedConnection = await mongoose.connect(process.env.MONGODB_URI, {
+    bufferCommands: false,
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
   return cachedConnection;
 }
 
 export default async function handler(req, res) {
-  await connectDB();
-  return app(req, res);
+  try {
+    await connectDB();
+    return app(req, res);
+  } catch (error) {
+    console.error('Vercel handler error:', error);
+    return res.status(500).json({ message: 'Erreur serveur.' });
+  }
 }

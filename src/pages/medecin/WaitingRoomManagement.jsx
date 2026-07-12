@@ -32,24 +32,24 @@ export default function WaitingRoomManagement() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['medecin-waiting-room'],
-    queryFn: async () => { const { data } = await api.get('/medecin/waiting-room'); return data; },
+    queryFn: async () => { const { data } = await api.get('/waiting-room'); return data; },
     refetchInterval: 30000,
   });
 
   const notifyMutation = useMutation({
-    mutationFn: async (patientId) => { await api.post(`/medecin/waiting-room/notify/${patientId}`); },
+    mutationFn: async (patientId) => { await api.post('/waiting-room/notify', { appointmentId: patientId }); },
     onSuccess: () => { queryClient.invalidateQueries('medecin-waiting-room'); toast.success('Patient notifié'); },
     onError: () => toast.error('Erreur'),
   });
 
   const startConsultMutation = useMutation({
-    mutationFn: async (patientId) => { await api.post(`/medecin/waiting-room/start-consultation/${patientId}`); },
+    mutationFn: async (patientId) => { await api.put('/docteurs/status', { currentStatus: 'busy', statusMessage: 'En consultation' }); },
     onSuccess: () => { queryClient.invalidateQueries('medecin-waiting-room'); toast.success('Consultation démarrée'); },
     onError: () => toast.error('Erreur'),
   });
 
   const toggleDoctorStatus = useMutation({
-    mutationFn: async (status) => { await api.put('/medecin/status', { status }); },
+    mutationFn: async (status) => { await api.put('/docteurs/status', { currentStatus: status }); },
     onSuccess: () => { queryClient.invalidateQueries('medecin-waiting-room'); toast.success('Statut mis à jour'); },
     onError: () => toast.error('Erreur'),
   });

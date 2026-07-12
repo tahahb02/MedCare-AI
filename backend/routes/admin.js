@@ -10,9 +10,35 @@ import AuditLog from '../models/AuditLog.js';
 import Clinic from '../models/Clinic.js';
 import { protect, authorize } from '../middlewares/auth.js';
 import { sendWelcomeEmail } from '../utils/sendEmail.js';
+import { upload } from '../utils/fileUpload.js';
 
 const router = express.Router();
 router.use(protect, authorize('admin'));
+
+// List all active doctors (for secretary/admin to assign patients)
+router.get('/doctors', async (req, res) => {
+  try {
+    const doctors = await User.find({ role: 'medecin', isActive: true }).select('name email avatar');
+    const enriched = await Promise.all(doctors.map(async (doc) => {
+      const profile = await DoctorProfile.findOne({ userId: doc._id });
+      return {
+        _id: doc._id,
+        name: doc.name,
+        email: doc.email,
+        avatar: doc.avatar,
+        specializations: profile?.specializations || [],
+        hospital: profile?.hospital || '',
+        currentStatus: profile?.currentStatus || 'disponible',
+        consultationFee: profile?.consultationFee || 0,
+        rating: profile?.rating || 5,
+        totalPatients: profile?.totalPatients || 0
+      };
+    }));
+    res.json({ doctors: enriched });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.', error: error.message });
+  }
+});
 
 // Dashboard stats
 router.get('/dashboard', async (req, res) => {
@@ -75,24 +101,46 @@ router.get('/dashboard', async (req, res) => {
   }
 });
 
+function generateRandomPassword() {
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const digits = '0123456789';
+  const specials = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+  const all = upper + lower + digits + specials;
+  let pw = '';
+  pw += upper[Math.floor(Math.random() * upper.length)];
+  pw += lower[Math.floor(Math.random() * lower.length)];
+  pw += digits[Math.floor(Math.random() * digits.length)];
+  pw += specials[Math.floor(Math.random() * specials.length)];
+  for (let i = 0; i < 8; i++) pw += all[Math.floor(Math.random() * all.length)];
+  return pw.split('').sort(() => Math.random() - 0.5).join('');
+}
+
 // Create patient
 router.post('/patients', async (req, res) => {
   try {
-    const { name, email, password, phone, dateOfBirth, gender, bloodType, address, city, emergencyContact, insuranceProvider, insuranceNumber, primaryDoctorId, subscription } = req.body;
+    const { name, email, phone, dateOfBirth, gender, bloodType, address, city, emergencyContact, insuranceProvider, insuranceNumber, primaryDoctorId, subscription } = req.body;
 
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: 'Cet email est déjà utilisé.' });
 
-    const patientPassword = password || 'MedCare2024!';
-    const user = await User.create({ name, email, password: patientPassword, phone, role: 'patient', isVerified: true });
+    const patientPassword = generateRandomPassword();
+    const user = await User.create({ name, email, password: patientPassword, phone, role: 'patient', isVerified: true, mustChangePassword: true });
 
-    const profile = await PatientProfile.create({
-      userId: user._id, dateOfBirth, gender, bloodType, address, city,
-      emergencyContact, insuranceProvider, insuranceNumber,
-      primaryDoctorId, createdBy: req.user._id
-    });
+    const profileData = { userId: user._id, createdBy: req.user._id };
+    if (dateOfBirth) profileData.dateOfBirth = new Date(dateOfBirth);
+    if (gender) profileData.gender = gender;
+    if (bloodType) profileData.bloodType = bloodType;
+    if (address) profileData.address = address;
+    if (city) profileData.city = city;
+    if (emergencyContact && (emergencyContact.name || emergencyContact.phone)) profileData.emergencyContact = emergencyContact;
+    if (insuranceProvider) profileData.insuranceProvider = insuranceProvider;
+    if (insuranceNumber) profileData.insuranceNumber = insuranceNumber;
+    if (primaryDoctorId) profileData.primaryDoctorId = primaryDoctorId;
 
-    if (subscription) {
+    const profile = await PatientProfile.create(profileData);
+
+    if (subscription && subscription.planType) {
       const planDurations = { mensuel: 30, trimestriel: 90, semestre: 180, annuel: 365 };
       const startDate = new Date();
       const endDate = new Date(startDate.getTime() + (planDurations[subscription.planType] || 30) * 24 * 60 * 60 * 1000);
@@ -100,9 +148,9 @@ router.post('/patients', async (req, res) => {
       await Subscription.create({
         patientId: user._id, planType: subscription.planType, status: 'actif',
         startDate, endDate, nextPaymentDate: endDate,
-        amount: subscription.amount, currency: subscription.currency || 'MAD',
-        paymentMethod: subscription.paymentMethod, createdBy: req.user._id,
-        history: [{ date: new Date(), action: 'creation', amount: subscription.amount, performedBy: req.user._id }]
+        amount: subscription.amount || 0, currency: subscription.currency || 'MAD',
+        paymentMethod: subscription.paymentMethod || 'especes', createdBy: req.user._id,
+        history: [{ date: new Date(), action: 'creation', amount: subscription.amount || 0, performedBy: req.user._id }]
       });
     }
 
@@ -114,6 +162,7 @@ router.post('/patients', async (req, res) => {
 
     res.status(201).json({ message: 'Patient créé avec succès.', user: { _id: user._id, name, email: user.email, role: user.role }, profile, temporaryPassword: patientPassword });
   } catch (error) {
+    console.error('Create patient error:', error);
     res.status(500).json({ message: 'Erreur serveur.', error: error.message });
   }
 });
@@ -126,7 +175,6 @@ router.get('/patients', async (req, res) => {
     if (search) query.$or = [{ name: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }];
 
     const patients = await User.find(query)
-      .populate({ path: 'patientProfile', model: PatientProfile })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
@@ -321,6 +369,45 @@ router.put('/clinic', async (req, res) => {
     res.json({ message: 'Clinique mise à jour.', clinic });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// Import CSV
+router.post('/patients/import', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Aucun fichier fourni.' });
+    const content = req.file.buffer?.toString('utf-8') || '';
+    const lines = content.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return res.status(400).json({ message: 'CSV vide ou invalide.' });
+
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    let imported = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+
+      if (row.email) {
+        const exists = await User.findOne({ email: row.email });
+        if (!exists) {
+          const user = await User.create({
+            name: row.name || row.nom || row.prenom || 'Patient importé',
+            email: row.email,
+            password: row.password || 'MedCare2024!',
+            phone: row.phone || row.telephone || '',
+            role: 'patient',
+            isVerified: true
+          });
+          await PatientProfile.create({ userId: user._id, gender: row.gender || row.sexe || 'homme', createdBy: req.user._id });
+          imported++;
+        }
+      }
+    }
+
+    res.json({ message: 'Import terminé.', imported });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.', error: error.message });
   }
 });
 

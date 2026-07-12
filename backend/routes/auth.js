@@ -48,7 +48,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       accessToken, refreshToken,
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, isVerified: user.isVerified, preferences: user.preferences, twoFactorEnabled: user.twoFactorEnabled },
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, avatar: user.avatar, isVerified: user.isVerified, preferences: user.preferences, twoFactorEnabled: user.twoFactorEnabled, mustChangePassword: user.mustChangePassword },
       profile
     });
   } catch (error) {
@@ -132,7 +132,7 @@ router.post('/logout', protect, async (req, res) => {
   }
 });
 
-// Change password
+// Change password (normal)
 router.post('/change-password', protect, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -142,9 +142,37 @@ router.post('/change-password', protect, async (req, res) => {
 
     user.password = newPassword;
     user.passwordChangedAt = new Date();
+    user.mustChangePassword = false;
     await user.save();
 
     res.json({ message: 'Mot de passe modifié avec succès.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
+
+// Force change password (first login with temporary password)
+router.post('/force-change-password', protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!newPassword) return res.status(400).json({ message: 'Nouveau mot de passe requis.' });
+
+    const user = await User.findById(req.user._id).select('+password');
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) return res.status(401).json({ message: 'Mot de passe temporaire incorrect.' });
+
+    if (newPassword.length < 8) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins 8 caractères.' });
+    if (!/[A-Z]/.test(newPassword)) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins une majuscule.' });
+    if (!/[a-z]/.test(newPassword)) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins une minuscule.' });
+    if (!/[0-9]/.test(newPassword)) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins un chiffre.' });
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) return res.status(400).json({ message: 'Le mot de passe doit contenir au moins un caractère spécial.' });
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    user.passwordChangedAt = new Date();
+    await user.save();
+
+    res.json({ message: 'Mot de passe modifié avec succès. Vous pouvez maintenant accéder à votre espace.' });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur.' });
   }

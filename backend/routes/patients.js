@@ -1,6 +1,7 @@
 import express from 'express';
 import User from '../models/User.js';
 import PatientProfile from '../models/PatientProfile.js';
+import DoctorProfile from '../models/DoctorProfile.js';
 import Subscription from '../models/Subscription.js';
 import Appointment from '../models/Appointment.js';
 import MedicalDocument from '../models/MedicalDocument.js';
@@ -13,6 +14,20 @@ import { checkSubscription } from '../middlewares/subscription.js';
 
 const router = express.Router();
 router.use(protect, authorize('patient', 'medecin', 'admin'));
+
+// Search doctors (for appointment creation)
+router.get('/search', async (req, res) => {
+  try {
+    const doctors = await User.find({ role: 'medecin', isActive: true }).select('name email avatar');
+    const profiles = await Promise.all(doctors.map(async (doc) => {
+      const profile = await DoctorProfile.findOne({ userId: doc._id });
+      return { userId: doc.toObject(), specializations: profile?.specializations || [], hospital: profile?.hospital || '' };
+    }));
+    res.json({ doctors: profiles });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur.' });
+  }
+});
 
 // Profile
 router.get('/profile', async (req, res) => {
